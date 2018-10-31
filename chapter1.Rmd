@@ -2,4 +2,4 @@
 
 IODS ([Introduction to Open Data Science](https://blogs.helsinki.fi/thinkopen/welcome-open-data-science/)) is a MOOC offered by University of Helsinki. My goal is to learn new R tips and tricks and to become more organized and productive in data analysis tasks. 
 
-Source of this learning diary is available at my [Github repo](https://github.com/mjlassila).
+Source of this learning diary is available at my [Github repo](https://github.com/mjlassila/IODS-project).
