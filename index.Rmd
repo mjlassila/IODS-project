@@ -12,7 +12,7 @@ output:
     fig_height: 4
 ---
 
-```{r setup, echo = FALSE}
+```{r setup, echo = FALSE, messages = FALSE}
 library(prettydoc)
 library(tufte)
 library(hrbrthemes)
