@@ -7,6 +7,7 @@ library(ggcorrplot)
 library(GoodmanKruskal)
 library(lindia)
 library(finalfit)
+library(sigr)
 ```
 
 # Week 2 – Regression and model validation
@@ -92,27 +93,13 @@ ggplot(learning2014, aes(factor(gender),attitude)) +
   theme_ipsum()
 ```
 
-```{r kendall-visualization}
-ggstatsplot::ggcorrmat(
-  data = learning2014,             # data from which variable is to be taken
-  cor.vars = age:points,
-  sig.level = 0.05
-)
-```
 
-```{r goodman-kruskal}
-learning2014_grouped <- learning2014 %>%
-  transmute(
-    gender = gender,
-    age = GroupNumeric(age,n = 6),
-    attitude = GroupNumeric(attitude, n=5),
-    deep = GroupNumeric(deep, n=5),
-    stra = GroupNumeric(stra, n=5),
-    surf = GroupNumeric(surf, n=5),
-    points = GroupNumeric(points, n=10)
-  )
-learning_mat <- GKtauDataframe(learning2014_grouped)
-plot(learning_mat, diagSize = 0.5)
+```{r graphical-overview-relationship}
+ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", fill = NA) +
+  scale_size_continuous(range = c(0.05,2)) +
+  theme_bw()
 ```
 
 
@@ -121,8 +108,10 @@ Choose three variables as explanatory variables and fit a regression model where
 In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction covariates leads to the problem of collinearity in linear regression, which can result in extreme sensitivity of the estimated model parameters to small changes in the data.
 
 ```{r fit-regression-model}
-learning2014_model <- lm(data=learning2014,formula = points ~ factor(gender) * attitude + deep + stra)
+learning2014_model <- lm(data=learning2014,formula = points ~ factor(gender) * attitude + stra)
 summary(learning2014_model)
+cat(render(wrapFTest(learning2014_model),
+    pSmallCutoff=0))
 ```
 
 
@@ -130,14 +119,25 @@ summary(learning2014_model)
 learning2014_model_simplified <- lm(data = learning2014, formula = points ~ attitude + stra )
 
 summary(learning2014_model_simplified)
+cat(render(wrapFTest(learning2014_model_simplified),
+    pSmallCutoff=0))
 ```
+
+```{r fit-simple-regression-model}
+learning2014_model_minimal <- lm(data = learning2014, formula = points ~ attitude)
+
+summary(learning2014_model_minimal)
+cat(render(wrapFTest(learning2014_model_minimal),
+    pSmallCutoff=0))
+```
+
 
 Using a summary of your fitted model, explain the relationship between the chosen explanatory variables and the target variable (interpret the model parameters). Explain and interpret the multiple R squared of the model. (0-3 points)
 
 Produce the following diagnostic plots: Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage. Explain the assumptions of the model and interpret the validity of those assumptions based on the diagnostic plots. (0-3 points)
 
 ```{r regression-diagnostics, echo = FALSE}
-plots <- gg_diagnose(learning2014_model_simplified, plot.all = FALSE, theme = theme_bw())
+plots <- gg_diagnose(learning2014_model, plot.all = FALSE, theme = theme_bw())
 include_plots <- plots[c(4, 5, 7)]
 plot_all(include_plots)
 ```
