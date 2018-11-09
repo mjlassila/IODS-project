@@ -93,6 +93,12 @@ ggplot(learning2014, aes(factor(gender),attitude)) +
   theme_ipsum()
 ```
 
+```{r graphical-overview-gender-age}
+ggplot(learning2014, aes(factor(gender),age)) + 
+  geom_violin() + 
+  theme_ipsum()
+```
+
 
 ```{r graphical-overview-relationship}
 ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra)) + 
@@ -105,7 +111,30 @@ ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra))
 
 Choose three variables as explanatory variables and fit a regression model where exam points is the target (dependent) variable. Show a summary of the fitted model and comment and interpret the results. Explain and interpret the statistical test related to the model parameters. If an explanatory variable in your model does not have a statistically significant relationship with the target variable, remove the variable from the model and fit the model again without it. (0-4 points)
 
-In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction covariates leads to the problem of collinearity in linear regression, which can result in extreme sensitivity of the estimated model parameters to small changes in the data.
+
+Surface approach: memorizing without understanding, with a serious lack of personal engagement in the learning process. Intention of getting forward with minimium trouble
+
+Deep approach: intention to maximize understanding with ta true commitment to learning. Strong need to engage in the actual content of the task.
+STrategic approad: the ways students organize their studying.
+
+ASSIST: the appproaches and study skills inventory for studets -survey (Tait, Etwishle, MacCune, 1008). Items were measured with a five point Likert skale (1=disagree, 5=agree)
+
+Learning approach, 8 subscales, 4 items each.
+
+1. Deep: seeking meaning, relating ideas, use of evidence
+2. surface: lack of purpose, unrelated memorizing, syllabus-boundness
+3. stratcgic: organized studying, time management
+
+students achievement was measured by points in the exaams
+
+n=183, (67% female, mean age of 25,6 years, SD=7.7)
+age skewed (median 22)
+
+Vehkalahti , K 2016 , The relationship between learning approaches and students' achievements in an introductory statistics course in Finland . in Proceedings of the 60th ISI World Statistics Congress of the International Statistical Institute, ISI2015 . INTERNATIONAL STATISTICAL INSTITUTE , pp. 68-73 , ISI World Statistics Congress , Rio de Janeiro , Brazil , 26/07/2015 .
+Based on http://hdl.handle.net/10138/163015
+
+
+In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the problem of collinearity in linear regression. Therefore, based on explorative analysis in fig 1, two non-correlating variables where chosen an prediction covariates
 
 ```{r fit-regression-model}
 learning2014_model <- lm(data=learning2014,formula = points ~ factor(gender) * attitude + stra)
@@ -123,24 +152,28 @@ cat(render(wrapFTest(learning2014_model_simplified),
     pSmallCutoff=0))
 ```
 
-```{r fit-simple-regression-model}
-learning2014_model_minimal <- lm(data = learning2014, formula = points ~ attitude)
-
-summary(learning2014_model_minimal)
-cat(render(wrapFTest(learning2014_model_minimal),
-    pSmallCutoff=0))
-```
 
 
 Using a summary of your fitted model, explain the relationship between the chosen explanatory variables and the target variable (interpret the model parameters). Explain and interpret the multiple R squared of the model. (0-3 points)
 
 Produce the following diagnostic plots: Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage. Explain the assumptions of the model and interpret the validity of those assumptions based on the diagnostic plots. (0-3 points)
 
-```{r regression-diagnostics, echo = FALSE}
-plots <- gg_diagnose(learning2014_model, plot.all = FALSE, theme = theme_bw())
-include_plots <- plots[c(4, 5, 7)]
-plot_all(include_plots)
+```{r residuals-fitted, echo = FALSE}
+gg_resfitted(learning2014_model, scale.factor = 1) + theme_bw()
 ```
+
+
+```{r qqplot, echo = FALSE}
+gg_qqplot(learning2014_model, scale.factor = 1) + theme_bw()
+```
+
+```{r residual-leverage, echo = FALSE}
+gg_resleverage(learning2014_model, method = "loess", se = FALSE, scale.factor = 1) + theme_bw()
+```
+
+
+
+
 
 
 
