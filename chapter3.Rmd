@@ -23,7 +23,7 @@ library(ggmosaic)
 
 alc <- fread(here("data/chapter3_alc.csv"))
 names(alc)
-skim(alc)
+# skim(alc)
 ```
 
 The original dataset has the following variables:
@@ -116,23 +116,74 @@ alc %<>% mutate(absnt = GroupNumeric(absences, n = 5)) %>% select(categorical_co
 taumatrix <- GKtauDataframe(alc)
 ```
 
-```{r tau-matrix, fig.width=10, fig.height=8}
+```{r tau-matrix, fig.width=10, fig.height=8, echo = FALSE}
 plot(taumatrix,colorPlot = FALSE,diagSize = 0.2)
 ```
 
-```{r create-final-dataset}
+```{r create-final-dataset, echo = FALSE}
 alc %<>%  select(high_use,goout,studytime,absnt)
+
+# Factor variables need to be named in meaninful way following the
+# original data descroption
+
+# studytime - weekly study time (numeric: 1 - <2 hours, 2 - 2 to 5 hours, 3 - 5 to 10 hours, or 4 - >10 hours) 
+# goout - going out with friends (numeric: from 1 - very low to 5 - very high)
+
+# abseentism
+# 0-1, 2, 3-4, 5-7, 8-
+
+# alcohol usage
+
+# High orninary
+
+studytime_labels <- c("<2 h","2–5 h","5–10 h",">10 h")
+absnt_labels <- c("0–1", "2", "3–4", "5–7", ">8")
+goout_labels <- c("vlow", "low", "mod", "high", "vhigh")
+alc_labels <- c("low","high")
+alc %<>% transmute(
+  high_use = factor(high_use, labels = alc_labels),
+  studytime = factor(studytime, labels = studytime_labels),
+  absnt = factor(absnt, labels = absnt_labels),
+  goout = factor(goout, labels = goout_labels)
+  )
+
+
+
 ```
 
-```{r visualize-final-dataset}
+```{r tau-matrix-final}
 taumatrix <- GKtauDataframe(alc)
 plot(taumatrix,colorPlot = TRUE,diagSize = 0.6)
-ggplot(alc) +
-    geom_mosaic(aes(x=product(absnt, goout), fill=high_use))
-
 ```
 
 
+```{r visualize-final-dataset,fig.width=10, fig.height=4, echo = FALSE}
+ggplot(alc) +
+    geom_mosaic(aes(x=product(absnt, goout), fill=high_use)) +
+    labs(
+      x = "alcohol usage vs. frequency of going out",
+      y = "frequency of absenteeism",
+      fill='level of alcohol usage',
+      title = "Relationship of partying, alcohol use and absenteeism"
+    )
+      
+  
+
+```
+
+```{r visualize-final-dataset-studytime,fig.width=10, fig.height=4, echo = FALSE}
+ggplot(alc) +
+    geom_mosaic(aes(x=product(studytime, goout), fill=high_use)) +
+    labs(
+      x = "alcohol usage vs. frequency of going out",
+      y = "study time",
+      fill='level of alcohol usage',
+      title = "Relationship of partying, alcohol use and time dedicated to studies"
+    )
+      
+  
+
+```
 
 Numerically and graphically explore the distributions of your chosen variables and their relationships with alcohol consumption (use for example cross-tabulations, bar plots and box plots). Comment on your findings and compare the results of your exploration to your previously stated hypotheses. (0-5 points)
 
@@ -146,74 +197,3 @@ Super-Bonus: Perform cross-validation to compare the performance of different lo
 
 
 
-
-
-
-
-
-Show a graphical overview of the data and show summaries of the variables in the data. Describe and interpret the outputs, commenting on the distributions of the variables and the relationships between them. (0-3 points)
-
-```{r graphical-overview-continous}
-
-
-
-```
-
-```{r graphical-overview-gender}
-ggplot(learning2014, aes(factor(gender),attitude)) + 
-  geom_violin() + 
-  theme_ipsum()
-```
-
-
-```{r graphical-overview-relationship}
-ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", fill = NA) +
-  scale_size_continuous(range = c(0.05,2)) +
-  theme_bw()
-```
-
-
-Choose three variables as explanatory variables and fit a regression model where exam points is the target (dependent) variable. Show a summary of the fitted model and comment and interpret the results. Explain and interpret the statistical test related to the model parameters. If an explanatory variable in your model does not have a statistically significant relationship with the target variable, remove the variable from the model and fit the model again without it. (0-4 points)
-
-In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction covariates leads to the problem of collinearity in linear regression, which can result in extreme sensitivity of the estimated model parameters to small changes in the data.
-
-```{r fit-regression-model}
-learning2014_model <- lm(data=learning2014,formula = points ~ factor(gender) * attitude + stra)
-summary(learning2014_model)
-cat(render(wrapFTest(learning2014_model),
-    pSmallCutoff=0))
-```
-
-
-```{r fit-final-regression-model}
-learning2014_model_simplified <- lm(data = learning2014, formula = points ~ attitude + stra )
-
-summary(learning2014_model_simplified)
-cat(render(wrapFTest(learning2014_model_simplified),
-    pSmallCutoff=0))
-```
-
-```{r fit-simple-regression-model}
-learning2014_model_minimal <- lm(data = learning2014, formula = points ~ attitude)
-
-summary(learning2014_model_minimal)
-cat(render(wrapFTest(learning2014_model_minimal),
-    pSmallCutoff=0))
-```
-
-
-Using a summary of your fitted model, explain the relationship between the chosen explanatory variables and the target variable (interpret the model parameters). Explain and interpret the multiple R squared of the model. (0-3 points)
-
-Produce the following diagnostic plots: Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage. Explain the assumptions of the model and interpret the validity of those assumptions based on the diagnostic plots. (0-3 points)
-
-```{r regression-diagnostics, echo = FALSE}
-plots <- gg_diagnose(learning2014_model, plot.all = FALSE, theme = theme_bw())
-include_plots <- plots[c(4, 5, 7)]
-plot_all(include_plots)
-```
-
-
-
-After completing all the phases above you are ready to submit your exercise for the peer-review (the workshop): click on the link ("RStudio Exercise") above these instructions. Have the two links (your GitHub repository and your course diary) ready!
