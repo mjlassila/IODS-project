@@ -121,7 +121,7 @@ plot(taumatrix,colorPlot = FALSE,diagSize = 0.2)
 ```
 
 ```{r create-final-dataset, echo = FALSE}
-alc %<>%  select(high_use,goout,studytime,absnt)
+alc %<>%  select(sex,high_use,goout,studytime,absnt)
 
 # Factor variables need to be named in meaninful way following the
 # original data descroption
@@ -144,7 +144,8 @@ alc %<>% transmute(
   high_use = factor(high_use, labels = alc_labels),
   studytime = factor(studytime, labels = studytime_labels),
   absnt = factor(absnt, labels = absnt_labels),
-  goout = factor(goout, labels = goout_labels)
+  goout = factor(goout, labels = goout_labels),
+  sex = sex
   )
 
 
@@ -159,35 +160,55 @@ plot(taumatrix,colorPlot = TRUE,diagSize = 0.6)
 
 ```{r visualize-final-dataset,fig.width=10, fig.height=4, echo = FALSE}
 ggplot(alc) +
-    geom_mosaic(aes(x=product(absnt, goout), fill=high_use)) +
+    geom_mosaic(aes(x=product(sex, goout), fill=high_use)) +
     labs(
       x = "alcohol usage vs. frequency of going out",
-      y = "frequency of absenteeism",
+      y = "gender",
       fill='level of alcohol usage',
-      title = "Relationship of partying, alcohol use and absenteeism"
+      title = "Relationship of partying, alcohol use and sex"
     )
       
   
 
 ```
 
-```{r visualize-final-dataset-studytime,fig.width=10, fig.height=4, echo = FALSE}
-ggplot(alc) +
-    geom_mosaic(aes(x=product(studytime, goout), fill=high_use)) +
-    labs(
-      x = "alcohol usage vs. frequency of going out",
-      y = "study time",
-      fill='level of alcohol usage',
-      title = "Relationship of partying, alcohol use and time dedicated to studies"
-    )
-      
-  
 
-```
+    
 
 Numerically and graphically explore the distributions of your chosen variables and their relationships with alcohol consumption (use for example cross-tabulations, bar plots and box plots). Comment on your findings and compare the results of your exploration to your previously stated hypotheses. (0-5 points)
 
 Use logistic regression to statistically explore the relationship between your chosen variables and the binary high/low alcohol consumption variable as the target variable. Present and interpret a summary of the fitted model. Present and interpret the coefficients of the model as odds ratios and provide confidence intervals for them. Interpret the results and compare them to your previously stated hypothesis. Hint: If your model includes factor variables see for example the first answer of this stackexchange thread on how R treats and how you should interpret these variables in the model output (or use some other resource to study this). (0-5 points)
+
+```{r fit-glm-1}
+alc_glm_first <- glm(
+  formula = high_use ~ absnt + studytime + goout + sex,
+  family = "binomial", 
+  data = alc)
+summary(alc_glm_first)
+```
+
+```{r fit-glm-2}
+alc_glm_second <- glm(
+  formula = high_use ~ goout + sex,
+  family = "binomial", 
+  data = alc)
+summary(alc_glm_second)
+```
+
+
+```{r predict-using-model}
+predicted_use <- predict(alc_glm_second, type = "response")
+alc$prob_high_use <- predicted_use
+alc$predict_high_use<- (alc$prob_high_use) > 0.5
+
+table(high_use = alc$high_use, prediction = alc$predict_high_use)
+
+```
+
+prediction
+high_use FALSE TRUE
+    low    247   21
+    high    57   57
 
 Using the variables which, according to your logistic regression model, had a statistical relationship with high/low alcohol consumption, explore the predictive power of you model. Provide a 2x2 cross tabulation of predictions versus the actual values and optionally display a graphic visualizing both the actual values and the predictions. Compute the total proportion of inaccurately classified individuals (= the training error) and comment on all the results. Compare the performance of the model with performance achieved by some simple guessing strategy. (0-3 points)
 
