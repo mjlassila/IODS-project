@@ -141,6 +141,7 @@ absnt_labels <- c("0–1", "2", "3–4", "5–7", ">8")
 goout_labels <- c("vlow", "low", "mod", "high", "vhigh")
 alc_labels <- c("low","high")
 alc %<>% transmute(
+  hu = high_use,
   high_use = factor(high_use, labels = alc_labels),
   studytime = factor(studytime, labels = studytime_labels),
   absnt = factor(absnt, labels = absnt_labels),
@@ -189,7 +190,7 @@ summary(alc_glm_first)
 
 ```{r fit-glm-2}
 alc_glm_second <- glm(
-  formula = high_use ~ goout + sex,
+  formula = hu ~ goout + sex,
   family = "binomial", 
   data = alc)
 summary(alc_glm_second)
@@ -201,8 +202,8 @@ predicted_use <- predict(alc_glm_second, type = "response")
 alc$prob_high_use <- predicted_use
 alc$predict_high_use<- (alc$prob_high_use) > 0.5
 
-table(high_use = alc$high_use, prediction = alc$predict_high_use)
-
+table(high_use = alc$hu, prediction = alc$predict_high_use)
+mean(abs(as.numeric(alc$hu) - alc$prob_high_use) > 0.5)
 ```
 
 prediction
