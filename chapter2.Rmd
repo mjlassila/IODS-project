@@ -136,19 +136,19 @@ Based on http://hdl.handle.net/10138/163015
 
 In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the problem of collinearity in linear regression. Therefore, based on explorative analysis in fig 1, two non-correlating variables where chosen an prediction covariates
 
-```{r fit-regression-model}
-learning2014_model <- lm(data=learning2014,formula = points ~ factor(gender) * attitude + stra)
-summary(learning2014_model)
-cat(render(wrapFTest(learning2014_model),
+```{r fit-attitude_stra_surf}
+model_attitude_stra_surf <- lm(data = learning2014, formula = points ~ attitude + stra + surf )
+
+summary(model_attitude_stra_surf)
+cat(render(wrapFTest(model_attitude_stra_surf),
     pSmallCutoff=0))
 ```
 
+```{r fit-attitude_stra}
+model_attitude_stra <- lm(data = learning2014, formula = points ~ attitude + stra)
 
-```{r fit-final-regression-model}
-learning2014_model_simplified <- lm(data = learning2014, formula = points ~ attitude + stra )
-
-summary(learning2014_model_simplified)
-cat(render(wrapFTest(learning2014_model_simplified),
+summary(model_attitude_stra)
+cat(render(wrapFTest(model_attitude_stra),
     pSmallCutoff=0))
 ```
 
@@ -159,16 +159,16 @@ Using a summary of your fitted model, explain the relationship between the chose
 Produce the following diagnostic plots: Residuals vs Fitted values, Normal QQ-plot and Residuals vs Leverage. Explain the assumptions of the model and interpret the validity of those assumptions based on the diagnostic plots. (0-3 points)
 
 ```{r residuals-fitted, echo = FALSE}
-gg_resfitted(learning2014_model, scale.factor = 1) + theme_bw()
+gg_resfitted(model_attitude_stra, scale.factor = 1) + theme_bw()
 ```
 
 
 ```{r qqplot, echo = FALSE}
-gg_qqplot(learning2014_model, scale.factor = 1) + theme_bw()
+gg_qqplot(model_attitude_stra, scale.factor = 1) + theme_bw()
 ```
 
 ```{r residual-leverage, echo = FALSE}
-gg_resleverage(learning2014_model, method = "loess", se = FALSE, scale.factor = 1) + theme_bw()
+gg_resleverage(model_attitude_stra, method = "loess", se = FALSE, scale.factor = 1) + theme_bw()
 ```
 
 
