@@ -44,7 +44,8 @@ students achievement was measured by points in the exaams
 n=183, (67% female, mean age of 25,6 years, SD=7.7)
 age skewed (median 22)
 
-## Exploratory analysis
+## Exploratory analysis {#explorative-analysis}
+
 
 ```{r graphical-overview-continous, echo = FALSE}
 # Show a graphical overview of the data and show summaries of the variables 
@@ -79,7 +80,7 @@ ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra))
 
 ## Regression analysis
 
-In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the problem of collinearity in linear regression. Therefore, based on explorative analysis in fig 1, two non-correlating variables where chosen an prediction covariates
+In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the problem of collinearity in linear regression. Therefore, based on explorative analysis in [Fig 1](#explorative-analysis), two non-correlating variables where chosen an prediction covariates
 
 ### Initial model
 
@@ -101,14 +102,21 @@ model_attitude_stra_surf <- lm(
 # Show a summary of the fitted model and comment and interpret the results. 
 # Explain and interpret the statistical test related to the model parameters.
 
+summary_colnames <- c(
+  "Predictor",
+  "Estimate",
+  "Confidence Interval (95%)",
+  "t-statistic",
+  "p-value")
+
 model_attitude_stra_surf_summary <- apa_print(model_attitude_stra_surf)
 knitr::kable(
   model_attitude_stra_surf_summary$table,
-  format="html") %>% 
+  format = "html", col.names = summary_colnames) %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
 
-`r render(wrapFTest(model_attitude_stra_surf, pSmallCutoff=0, format="markdown"))`Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_surf)$adj.r.squared, 2)`.
+`r render(wrapFTest(model_attitude_stra_surf, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_surf)$adj.r.squared, 2)`.
 
 ### Final model
 
@@ -128,12 +136,12 @@ model_attitude_stra <- lm(
 model_attitude_stra_summary <- apa_print(model_attitude_stra)
 knitr::kable(
   model_attitude_stra_summary$table,
-  format="html") %>% 
+  format="html", col.names = summary_colnames) %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
 
 
-For the final model `r render(wrapFTest(model_attitude_stra, pSmallCutoff=0, format="markdown"))`Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra)$adj.r.squared, 2)`.
+For the final model `r render(wrapFTest(model_attitude_stra, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra)$adj.r.squared, 2)`.
 
 ## Regression diagnostics
 
