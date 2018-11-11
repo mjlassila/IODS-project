@@ -41,9 +41,6 @@ Learning approach, 8 subscales, 4 items each.
 
 students achievement was measured by points in the exaams
 
-n=183, (67% female, mean age of 25,6 years, SD=7.7)
-age skewed (median 22)
-
 ## Exploratory analysis {#explorative-analysis}
 
 
@@ -82,6 +79,15 @@ ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra))
 
 In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the problem of collinearity in linear regression. Therefore, based on explorative analysis in [Fig 1](#explorative-analysis), two non-correlating variables where chosen an prediction covariates
 
+
+The standard requirements for linear regression are:
+
+* Dependent variables have a linear relationship to the independent variable X.
+* For each value of X, the probability distribution of Y has the same standard deviation σ.
+* For any given value of X,
+The Y values are independent.
+The Y values are roughly normally distributed (i.e., symmetric and unimodal). A little skewness is ok if the sample size is large.
+
 ### Initial model
 
 ```{r initial-model-instruction, echo=FALSE, eval=FALSE}
@@ -112,7 +118,7 @@ summary_colnames <- c(
 model_attitude_stra_surf_summary <- apa_print(model_attitude_stra_surf)
 knitr::kable(
   model_attitude_stra_surf_summary$table,
-  format = "html", col.names = summary_colnames) %>% 
+  format = "html", col.names = summary_colnames, caption = "Regression summary") %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
 
@@ -136,7 +142,7 @@ model_attitude_stra <- lm(
 model_attitude_stra_summary <- apa_print(model_attitude_stra)
 knitr::kable(
   model_attitude_stra_summary$table,
-  format="html", col.names = summary_colnames) %>% 
+  format="html", col.names = summary_colnames, caption = "Regression summary") %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
 
@@ -161,14 +167,66 @@ For the final model `r render(wrapFTest(model_attitude_stra, pSmallCutoff=0, for
 gg_resfitted(model_attitude_stra, scale.factor = 1) + theme_bw()
 ```
 
+Residuals vs Fitted -plot shows if residuals have non-linear patterns. There could be a non-linear relationship between predictor variables and an outcome variable and the pattern could show up in this plot if the model doesn’t capture the non-linear relationship. If you find equally spread residuals around a horizontal line without distinct patterns, that is a good indication you don’t have non-linear relationships. I don’t see any distinctive pattern 
+
 
 ```{r qqplot, echo = FALSE}
 gg_qqplot(model_attitude_stra, scale.factor = 1) + theme_bw()
+
 ```
+Normal Q-Q -plot shows if residuals are normally distributed. Do residuals follow a straight line well or do they deviate severely? It’s good if residuals are lined well on the straight dashed line.
+
+
 
 ```{r residual-leverage, echo = FALSE}
 gg_resleverage(model_attitude_stra, method = "loess", se = FALSE, scale.factor = 1) + theme_bw()
+
 ```
+This plot helps us to find influential cases (i.e., subjects) if any. Not all outliers are influential in linear regression analysis (whatever outliers mean). Even though data have extreme values, they might not be influential to determine a regression line. 
+
+We watch out for outlying values at the upper right corner or at the lower right corner. Those spots are the places where cases can be influential against a regression line. Look for cases outside of a dashed line, Cook’s distance. When cases are outside of the Cook’s distance (meaning they have high Cook’s distance scores), the cases are influential to the regression results. The regression results will be altered if we exclude those cases.
+
+## Extra - tweaking the model
+
+Just for the sake of curiosiety, let's investige how excluding there outlier cases (35, 56 & 145) has an effect on our regression model. 
+
+```{r fit-attitude_stra-excluded-cases}
+learning2014$id <- 1:dim(learning2014)[1]
+model_attitude_stra_excluded <- lm(
+  data = learning2014 %>% filter(!id %in% c(35, 145, 56)), 
+  formula = points ~ attitude + stra)
+```
+
+```{r model_model_attitude_stra_excluded-summary, echo = FALSE}
+model_attitude_stra_summary_excluded <- apa_print(model_attitude_stra_excluded)
+knitr::kable(
+  model_attitude_stra_summary_excluded$table,
+  format="html", col.names = summary_colnames, caption = "Regression summary") %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"))
+```
+
+
+For the model created using data without cases 35, 145 and 56, the `r render(wrapFTest(model_attitude_stra_excluded, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_excluded)$adj.r.squared, 2)`.
+
+Effect on the model seems to be pretty huge! Let's see from the data what kind of cases these are so that we could decide if it is prudent to consider them outright outliers.
+
+```{r excluded-cases-table, echo = FALSE}
+case_colnames <- c("Gender","Age","Attitude","Deep", "Strategic","Surface","Points")
+knitr::kable(
+  learning2014 %>% filter(id %in% c(35, 145, 56)) %>% select(-id),
+  format="html", col.names = case_colnames, digits = 2, caption = "Outlier cases") %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"))
+```
+Looking the data, these unfortunate students have scored very low in the test, even though their motivation is strong. It might be that some external cause has affected their test performance as other low-scoring (points <=10) students somewhat differ from these three cases.
+
+```{r low-scoring-students, echo = FALSE}
+case_colnames <- c("Gender","Age","Attitude","Deep", "Strategic","Surface","Points")
+knitr::kable(
+  learning2014 %>% filter(points <= 10) %>% select(-id),
+  format="html", col.names = case_colnames, digits = 2, caption = "Low-scoring students") %>% 
+  kable_styling(bootstrap_options = c("striped", "condensed"))
+```
+
 
 ## References
 
