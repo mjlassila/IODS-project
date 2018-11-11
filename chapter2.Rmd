@@ -1,4 +1,4 @@
-```{r chapter-2-setup, cache = TRUE, echo = FALSE, message = FALSE, warning = FALSE}
+```{r chapter-2-setup, cache = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
 library(PerformanceAnalytics)
 library(data.table)
 library(tidyverse)
@@ -58,6 +58,12 @@ ggpairs(
         lower = list(combo = wrap("facethist", bins = 5))) + theme_minimal()
 ```
 
+From the explatory graph we can see that the gender and age distribution is rather skewed in the data. There are almost 50% more female students than males -- especially among the students in their twenties. Even though the mean age is `r round(mean(learning2014$age),2)`, there are lots of older students too, the maximum age being `r max(learning2014$age)`. 
+
+Visual inspection indicates that even though there are slight differences in the attitude and learning approch scores (deep, surface, strategic) between males and females it seems that these differences do not have an effect on median test points. From the figure below we can see that the bulk of the data sits right in the middle of the scale so that there are very few datapoints in the ends of the scales.
+
+
+
 ### Relationship of gender, attitude and strategic study approach
 
 ```{r graphical-overview-relationship, cache = TRUE, echo = FALSE}
@@ -70,7 +76,17 @@ ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra))
 
 ## Regression analysis
 
-In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the [problem of collinearity in linear regression](https://en.wikipedia.org/wiki/Multicollinearity#Consequences_of_multicollinearity), eg. the model might overfit the data. Therefore, based on explorative analysis in [Fig 1](#explorative-analysis), two non-correlating variables where chosen an prediction covariates.
+In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the [problem of collinearity in linear regression](https://en.wikipedia.org/wiki/Multicollinearity#Consequences_of_multicollinearity), eg. the model might overfit the data. 
+
+Based on explorative analysis in [Fig 1](#explorative-analysis), three variables were chosen as prediction covariates.
+
+For the first model, the following variables were chosen as predictors.
+
+* attitude (correlation with points, 0.437)
+* strategic learning approach (correlation with points, 0.146)
+* surface learning approach (correlation with points, -0.144)
+
+Attitude and strategic learning approach do not correlate (0.06), strategic learning and surface learning approach correlate slightly (-0.16) as well as surfarce learning approach and attitude (-0.17). 
 
 ### Initial model
 
@@ -87,7 +103,7 @@ model_attitude_stra_surf <- lm(
 
 ```
 
-```{r model_attitude_stra_surf_summary, echo = FALSE, cache = TRUE}
+```{r model_attitude_stra_surf_summary, echo = FALSE}
 
 # Show a summary of the fitted model and comment and interpret the results. 
 # Explain and interpret the statistical test related to the model parameters.
@@ -107,6 +123,9 @@ knitr::kable(
 ```
 
 `r render(wrapFTest(model_attitude_stra_surf, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_surf)$adj.r.squared, 2)`.
+
+From the summary we can see, that the surface learning variable (surf) doesn't have statistically significant relationship with test points (p=0.446). Strategic learning approach -variable (stra) is almost significant at the 10% level (p=0.177) so for the sake of experimenting, we'll keep in in the next iteration of the model.
+
 
 ### Final model
 
