@@ -6,10 +6,23 @@ output:
     theme: tactile
     highlight: github
     toc: true
-    toc_depth: 2
+    toc_depth: 1
     fig_caption: true
     fig_width: 6
     fig_height: 4
+references:
+- id: vehkalahti2016
+  title: The relationship between learning approaches and students' achievements in an introductory statistics course in Finland
+  author:
+  - family: Vehkalahti
+    given: Kimmo
+  container-title: Proceedings of the 60th ISI World Statistics Congress of the International Statistical Institute, ISI2015
+  URL: 'http://hdl.handle.net/10138/163015'
+  address: Rio de Janeiro, Brazil
+  page: 68-73
+  type: paper-conference
+  issued:
+    year: 2016
 ---
 
 ```{r setup, echo = FALSE, messages = FALSE}
@@ -18,10 +31,8 @@ library(tufte)
 library(hrbrthemes)
 ```
 
-
-
 ***
-  
+
 ```{r child = "chapter1.Rmd"}
 ```
   

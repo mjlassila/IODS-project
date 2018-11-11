@@ -21,39 +21,10 @@ learning2014 <- fread(here("data/learning2014.csv"))
 
 ```
 
+## Introduction
 
 
-Show a graphical overview of the data and show summaries of the variables in the data. Describe and interpret the outputs, commenting on the distributions of the variables and the relationships between them. (0-3 points)
-
-```{r graphical-overview-continous, echo = FALSE}
-
-chart.Correlation(learning2014[,-1], histogram=TRUE, pch=19, method="pearson")
-
-```
-
-```{r graphical-overview-gender, echo = FALSE}
-ggplot(learning2014, aes(factor(gender),attitude)) + 
-  geom_violin() + 
-  theme_ipsum()
-```
-
-```{r graphical-overview-gender-age, echo = FALSE}
-ggplot(learning2014, aes(factor(gender),age)) + 
-  geom_violin() + 
-  theme_ipsum()
-```
-
-
-```{r graphical-overview-relationship, echo = FALSE}
-ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra)) + 
-  geom_point() + 
-  geom_smooth(method = "lm", fill = NA) +
-  scale_size_continuous(range = c(0.05,2)) +
-  theme_bw()
-```
-
-
-
+[see @vehkalahti2016]
 
 Surface approach: memorizing without understanding, with a serious lack of personal engagement in the learning process. Intention of getting forward with minimium trouble
 
@@ -73,21 +44,58 @@ students achievement was measured by points in the exaams
 n=183, (67% female, mean age of 25,6 years, SD=7.7)
 age skewed (median 22)
 
-Vehkalahti , K 2016 , The relationship between learning approaches and students' achievements in an introductory statistics course in Finland . in Proceedings of the 60th ISI World Statistics Congress of the International Statistical Institute, ISI2015 . INTERNATIONAL STATISTICAL INSTITUTE , pp. 68-73 , ISI World Statistics Congress , Rio de Janeiro , Brazil , 26/07/2015 .
-Based on http://hdl.handle.net/10138/163015
+## Exploratory analysis
 
+```{r graphical-overview-continous, echo = FALSE}
+# Show a graphical overview of the data and show summaries of the variables 
+# in the data. Describe and interpret the outputs, 
+# commenting on the distributions of the variables 
+# and the relationships between them. (0-3 points)
+
+chart.Correlation(learning2014[,-1], histogram=TRUE, pch=19, method="pearson")
+
+```
+
+```{r graphical-overview-gender, echo = FALSE, fig.width=5, fig.height=5}
+ggplot(learning2014, aes(gender,attitude)) + 
+  geom_violin() + 
+  theme_ipsum()
+```
+
+```{r graphical-overview-gender-age, echo = FALSE, fig.width=5, fig.height=5}
+ggplot(learning2014, aes(gender,age)) + 
+  geom_violin() + 
+  theme_ipsum()
+```
+
+
+```{r graphical-overview-relationship, echo = FALSE}
+ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", fill = NA) +
+  scale_size_continuous(range = c(0.05,2)) +
+  theme_bw()
+```
+
+## Regression analysis
 
 In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the problem of collinearity in linear regression. Therefore, based on explorative analysis in fig 1, two non-correlating variables where chosen an prediction covariates
 
-```{r fit-attitude_stra_surf}
+### Initial model
+
+```{r initial-model-instruction, echo=FALSE, eval=FALSE}
 # Choose three variables as explanatory variables and 
 # fit a regression model where exam points is the target (dependent) variable.
+```
 
+
+```{r fit-attitude_stra_surf}
 model_attitude_stra_surf <- lm(
   data = learning2014, 
   formula = points ~ attitude + stra + surf )
 
 ```
+
 ```{r model_attitude_stra_surf_summary, echo = FALSE}
 
 # Show a summary of the fitted model and comment and interpret the results. 
@@ -100,24 +108,23 @@ knitr::kable(
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
 
+`r render(wrapFTest(model_attitude_stra_surf, pSmallCutoff=0, format="markdown"))`Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_surf)$adj.r.squared, 2)`.
 
+### Final model
 
-`r render(wrapFTest(model_attitude_stra_surf, pSmallCutoff=0, format="markdown"))`. Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_surf)$adj.r.squared, 2)`.
-
-```{r fit-attitude_stra}
+```{r final-model-instruction, echo = FALSE, eval = FALSE}
 # If an explanatory variable in your model does not have 
 # a statistically significant relationship with the target variable
 # remove the variable from the model and fit the model again without it.
+```
 
+```{r fit-attitude_stra}
 model_attitude_stra <- lm(
   data = learning2014, 
   formula = points ~ attitude + stra)
-
 ```
 
 ```{r model_model_attitude_stra_summary, echo = FALSE}
-
-
 model_attitude_stra_summary <- apa_print(model_attitude_stra)
 knitr::kable(
   model_attitude_stra_summary$table,
@@ -126,9 +133,9 @@ knitr::kable(
 ```
 
 
-For the modified, final model `r render(wrapFTest(model_attitude_stra, pSmallCutoff=0, format="markdown"))`. Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra)$adj.r.squared, 2)`.
+For the final model `r render(wrapFTest(model_attitude_stra, pSmallCutoff=0, format="markdown"))`Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra)$adj.r.squared, 2)`.
 
-
+## Regression diagnostics
 
 ```{r instructions, echo = FALSE, eval = FALSE}
 # Produce the following diagnostic plots: 
@@ -155,10 +162,5 @@ gg_qqplot(model_attitude_stra, scale.factor = 1) + theme_bw()
 gg_resleverage(model_attitude_stra, method = "loess", se = FALSE, scale.factor = 1) + theme_bw()
 ```
 
+## References
 
-
-
-
-
-
-After completing all the phases above you are ready to submit your exercise for the peer-review (the workshop): click on the link ("RStudio Exercise") above these instructions. Have the two links (your GitHub repository and your course diary) ready!
