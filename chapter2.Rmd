@@ -46,7 +46,7 @@ students achievement was measured by points in the exaams
 
 
 
-```{r graphical-overview, cache = TRUE, echo = FALSE, fig.width = 10, fig.height = 4, message = FALSE}
+```{r graphical-overview, cache = TRUE, echo = FALSE, fig.width = 12, fig.height = 4, message = FALSE}
 # Show a graphical overview of the data and show summaries of the variables 
 # in the data. Describe and interpret the outputs, 
 # commenting on the distributions of the variables 
