@@ -22,7 +22,7 @@ learning2014 <- fread(here("data/learning2014.csv"))
 
 ```
 
-The following analysis uses dataset (n=`r dim(learning2014)[1]` gathered using *ASSIST: the appproaches and study skills inventory for studets * -survey. For more information regarding the dataset, please see @vehkalahti2016. 
+The following analysis uses dataset (n=`r dim(learning2014)[1]`) gathered using *ASSIST: the appproaches and study skills inventory for studets * -survey. For more information regarding the dataset, please see @vehkalahti2016. 
 
 The purpose of the analysis is to explore, whether is it possible to predict student's test performance using composite variables depicting student's mental inclination towards studying, namely: 
 
