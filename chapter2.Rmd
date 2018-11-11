@@ -1,4 +1,4 @@
-```{r chapter-2-setup, echo = FALSE, message = FALSE, warning = FALSE}
+```{r chapter-2-setup, cache = TRUE, echo = FALSE, message = FALSE, warning = FALSE}
 library(PerformanceAnalytics)
 library(data.table)
 library(tidyverse)
@@ -11,11 +11,12 @@ library(sigr)
 library(papaja)
 library(here)
 library(kableExtra)
+library(GGally)
 ```
 
 # Week 2 – Regression and model validation
 
-```{r load-data, echo = FALSE, message= FALSE}
+```{r load-data, echo = FALSE, message= FALSE, cache = TRUE}
 
 learning2014 <- fread(here("data/learning2014.csv"))
 
@@ -44,30 +45,22 @@ students achievement was measured by points in the exaams
 ## Exploratory analysis {#explorative-analysis}
 
 
-```{r graphical-overview-continous, echo = FALSE}
+
+```{r graphical-overview, cache = TRUE, echo = FALSE, fig.width = 10, fig.height = 4, message = FALSE}
 # Show a graphical overview of the data and show summaries of the variables 
 # in the data. Describe and interpret the outputs, 
 # commenting on the distributions of the variables 
 # and the relationships between them. (0-3 points)
 
-chart.Correlation(learning2014[,-1], histogram=TRUE, pch=19, method="pearson")
-
+ggpairs(
+  learning2014,
+  mapping = aes(col = gender, alpha = 0.3), 
+        lower = list(combo = wrap("facethist", bins = 5))) + theme_minimal()
 ```
 
-```{r graphical-overview-gender, echo = FALSE, fig.width=5, fig.height=5}
-ggplot(learning2014, aes(gender,attitude)) + 
-  geom_violin() + 
-  theme_ipsum()
-```
+### Relationship of gender, attitude and strategic study approach
 
-```{r graphical-overview-gender-age, echo = FALSE, fig.width=5, fig.height=5}
-ggplot(learning2014, aes(gender,age)) + 
-  geom_violin() + 
-  theme_ipsum()
-```
-
-
-```{r graphical-overview-relationship, echo = FALSE}
+```{r graphical-overview-relationship, cache = TRUE, echo = FALSE}
 ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra)) + 
   geom_point() + 
   geom_smooth(method = "lm", fill = NA) +
@@ -77,16 +70,7 @@ ggplot(learning2014, aes(color = gender, x = attitude, y = points, size = stra))
 
 ## Regression analysis
 
-In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the problem of collinearity in linear regression. Therefore, based on explorative analysis in [Fig 1](#explorative-analysis), two non-correlating variables where chosen an prediction covariates
-
-
-The standard requirements for linear regression are:
-
-* Dependent variables have a linear relationship to the independent variable X.
-* For each value of X, the probability distribution of Y has the same standard deviation σ.
-* For any given value of X,
-The Y values are independent.
-The Y values are roughly normally distributed (i.e., symmetric and unimodal). A little skewness is ok if the sample size is large.
+In building linear regression models, it is desirable to have high correlations between the prediction covariates and the response variable, but small correlations between the different prediction covariates. Large correlations between prediction variables leads to the [problem of collinearity in linear regression](https://en.wikipedia.org/wiki/Multicollinearity#Consequences_of_multicollinearity), eg. the model might overfit the data. Therefore, based on explorative analysis in [Fig 1](#explorative-analysis), two non-correlating variables where chosen an prediction covariates.
 
 ### Initial model
 
@@ -96,14 +80,14 @@ The Y values are roughly normally distributed (i.e., symmetric and unimodal). A 
 ```
 
 
-```{r fit-attitude_stra_surf}
+```{r fit-attitude_stra_surf, cache = TRUE}
 model_attitude_stra_surf <- lm(
   data = learning2014, 
   formula = points ~ attitude + stra + surf )
 
 ```
 
-```{r model_attitude_stra_surf_summary, echo = FALSE}
+```{r model_attitude_stra_surf_summary, echo = FALSE, cache = TRUE}
 
 # Show a summary of the fitted model and comment and interpret the results. 
 # Explain and interpret the statistical test related to the model parameters.
@@ -132,13 +116,13 @@ knitr::kable(
 # remove the variable from the model and fit the model again without it.
 ```
 
-```{r fit-attitude_stra}
+```{r fit-attitude_stra, cache = TRUE}
 model_attitude_stra <- lm(
   data = learning2014, 
   formula = points ~ attitude + stra)
 ```
 
-```{r model_model_attitude_stra_summary, echo = FALSE}
+```{r model_model_attitude_stra_summary, echo = FALSE, cache = TRUE}
 model_attitude_stra_summary <- apa_print(model_attitude_stra)
 knitr::kable(
   model_attitude_stra_summary$table,
@@ -151,7 +135,14 @@ For the final model `r render(wrapFTest(model_attitude_stra, pSmallCutoff=0, for
 
 ## Regression diagnostics
 
-```{r instructions, echo = FALSE, eval = FALSE}
+Regression diagnostics plots help to observe, if the model meets the assumptions of linear regression:
+
+* Linearity of residuals
+* Independence of residuals
+* Normal distribution of residuals
+* Equal variance of residuals
+
+```{r instructions, echo = FALSE, eval = FALSE, cache = TRUE}
 # Produce the following diagnostic plots: 
 # Residuals vs Fitted values
 # Normal QQ-plot
@@ -163,41 +154,52 @@ For the final model `r render(wrapFTest(model_attitude_stra, pSmallCutoff=0, for
 
 
 
-```{r residuals-fitted, echo = FALSE}
+```{r residuals-fitted, echo = FALSE, cache = TRUE}
 gg_resfitted(model_attitude_stra, scale.factor = 1) + theme_bw()
 ```
 
-Residuals vs Fitted -plot shows if residuals have non-linear patterns. There could be a non-linear relationship between predictor variables and an outcome variable and the pattern could show up in this plot if the model doesn’t capture the non-linear relationship. If you find equally spread residuals around a horizontal line without distinct patterns, that is a good indication you don’t have non-linear relationships. I don’t see any distinctive pattern 
+
+Residuals vs Fitted -plot shows if residuals have non-linear patterns. If the residuals have constant variance of errors, the plot scatters randomly without any distict patterns. We don't see patterns here, so we can conclude that the variance is constant and the assumption of equal variance of residuals is met.
 
 
-```{r qqplot, echo = FALSE}
+```{r qqplot, echo = FALSE, cache = TRUE}
 gg_qqplot(model_attitude_stra, scale.factor = 1) + theme_bw()
 
 ```
-Normal Q-Q -plot shows if residuals are normally distributed. Do residuals follow a straight line well or do they deviate severely? It’s good if residuals are lined well on the straight dashed line.
+
+Normal Q-Q -plot shows if residuals are normally distributed. If the residuals deviate from the straight line it is an indication of non-normality. There are few outlying values in both ends of the line but majority of of the points line nicely and therefore we can conclude that the the residuals of the model are normally distributed.
 
 
 
-```{r residual-leverage, echo = FALSE}
+```{r residual-leverage, echo = FALSE, cache = TRUE}
 gg_resleverage(model_attitude_stra, method = "loess", se = FALSE, scale.factor = 1) + theme_bw()
 
 ```
-This plot helps us to find influential cases (i.e., subjects) if any. Not all outliers are influential in linear regression analysis (whatever outliers mean). Even though data have extreme values, they might not be influential to determine a regression line. 
 
-We watch out for outlying values at the upper right corner or at the lower right corner. Those spots are the places where cases can be influential against a regression line. Look for cases outside of a dashed line, Cook’s distance. When cases are outside of the Cook’s distance (meaning they have high Cook’s distance scores), the cases are influential to the regression results. The regression results will be altered if we exclude those cases.
+Residual vs. leverage -plot helps to find influential cases. Not all outliers have leverage in linear regression analysis. Values to observe are at the upper right corner or at the lower right corner -- they are the ones which can have an effect on regression results. We don't see outlying values in these critical spots, so we can conclude that there is no influencial individual cases in the data.
+
 
 ## Extra - tweaking the model
 
-Just for the sake of curiosiety, let's investige how excluding there outlier cases (35, 56 & 145) has an effect on our regression model. 
+Even though we just concluded that there's no influencial individual cases in the data, we can see from the plots that there are few outlying cases in non-critical spots of the Residual vs. leverage plot. What happens if we exclude them from the data? To do it, we have to single out the cases from the data using Cook's distance.
 
-```{r fit-attitude_stra-excluded-cases}
+```{r cooks-distance, echo = FALSE, cache = TRUE}
+gg_cooksd(
+  model_attitude_stra,
+  scale.factor = 1, show.threshold = FALSE) + 
+  theme_bw()
+```
+
+Just for the sake of curiosity, let's investige how excluding two outlier cases (56 & 145) has an effect on our regression model. 
+
+```{r fit-attitude_stra-excluded-cases, cache = TRUE}
 learning2014$id <- 1:dim(learning2014)[1]
 model_attitude_stra_excluded <- lm(
-  data = learning2014 %>% filter(!id %in% c(35, 145, 56)), 
+  data = learning2014 %>% filter(!id %in% c(35, 145)), 
   formula = points ~ attitude + stra)
 ```
 
-```{r model_model_attitude_stra_excluded-summary, echo = FALSE}
+```{r model_model_attitude_stra_excluded-summary, echo = FALSE, cache = TRUE}
 model_attitude_stra_summary_excluded <- apa_print(model_attitude_stra_excluded)
 knitr::kable(
   model_attitude_stra_summary_excluded$table,
@@ -206,20 +208,20 @@ knitr::kable(
 ```
 
 
-For the model created using data without cases 35, 145 and 56, the `r render(wrapFTest(model_attitude_stra_excluded, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_excluded)$adj.r.squared, 2)`.
+For the model created using data without cases 35 and 145, the `r render(wrapFTest(model_attitude_stra_excluded, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_excluded)$adj.r.squared, 2)`.
 
-Effect on the model seems to be pretty huge! Let's see from the data what kind of cases these are so that we could decide if it is prudent to consider them outright outliers.
+The fit of the model seems to be marginally better when two outlying cases are excluded. Let's see from the data what kind of cases these are so that we could decide if it is prudent to consider them outliers.
 
-```{r excluded-cases-table, echo = FALSE}
+```{r excluded-cases-table, echo = FALSE, cache = TRUE}
 case_colnames <- c("Gender","Age","Attitude","Deep", "Strategic","Surface","Points")
 knitr::kable(
-  learning2014 %>% filter(id %in% c(35, 145, 56)) %>% select(-id),
+  learning2014 %>% filter(id %in% c(35, 145)) %>% select(-id),
   format="html", col.names = case_colnames, digits = 2, caption = "Outlier cases") %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
-Looking the data, these unfortunate students have scored very low in the test, even though their motivation is strong. It might be that some external cause has affected their test performance as other low-scoring (points <=10) students somewhat differ from these three cases.
+Looking the data, these unfortunate students have scored very low in the test, even though their motivation is strong. It might be that some external cause has affected their test performance as other low-scoring (points <=10) students somewhat differ from these cases.
 
-```{r low-scoring-students, echo = FALSE}
+```{r low-scoring-students, echo = FALSE, cache = TRUE}
 case_colnames <- c("Gender","Age","Attitude","Deep", "Strategic","Surface","Points")
 knitr::kable(
   learning2014 %>% filter(points <= 10) %>% select(-id),
