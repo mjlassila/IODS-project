@@ -22,25 +22,17 @@ learning2014 <- fread(here("data/learning2014.csv"))
 
 ```
 
-## Introduction
+The following analysis uses dataset (n=`r dim(learning2014)[1]` gathered using *ASSIST: the appproaches and study skills inventory for studets * -survey. For more information regarding the dataset, please see @vehkalahti2016. 
 
+The purpose of the analysis is to explore, whether is it possible to predict student's test performance using composite variables depicting student's mental inclination towards studying, namely: 
 
-[see @vehkalahti2016]
+1. positive attitude
+2. desire to learn deeply
+2. desire to learn quickly without commintment to truly understand the subject matter.
+4. strategic mentality torwards studying
 
-Surface approach: memorizing without understanding, with a serious lack of personal engagement in the learning process. Intention of getting forward with minimium trouble
+These four composite variables were created from the set of 42 variables. Original variables were measured using five-point Likert scale and composite variables were scaled back to the five-point range.
 
-Deep approach: intention to maximize understanding with ta true commitment to learning. Strong need to engage in the actual content of the task.
-STrategic approad: the ways students organize their studying.
-
-ASSIST: the appproaches and study skills inventory for studets -survey (Tait, Etwishle, MacCune, 1008). Items were measured with a five point Likert skale (1=disagree, 5=agree)
-
-Learning approach, 8 subscales, 4 items each.
-
-1. Deep: seeking meaning, relating ideas, use of evidence
-2. surface: lack of purpose, unrelated memorizing, syllabus-boundness
-3. stratcgic: organized studying, time management
-
-students achievement was measured by points in the exaams
 
 ## Exploratory analysis {#explorative-analysis}
 
@@ -122,9 +114,11 @@ knitr::kable(
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
 
-`r render(wrapFTest(model_attitude_stra_surf, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_surf)$adj.r.squared, 2)`.
+`r render(wrapFTest(model_attitude_stra_surf, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_surf)$adj.r.squared, 2)`. 
 
-From the summary we can see, that the surface learning variable (surf) doesn't have statistically significant relationship with test points (p=0.446). Strategic learning approach -variable (stra) is almost significant at the 10% level (p=0.177) so for the sake of experimenting, we'll keep in in the next iteration of the model.
+R^2^ is the percentage of the dependent variable variation explained by the linear model. High R-squared values represent smaller differences between the observed data and the fitted values. Having R^2^ = 0.2074, our first model explains 20% of the observed variation in student's test scores.
+
+From the summary we can see, that the surface learning variable (surf) doesn't have statistically significant relationship with test points (p=0.446). Neither Strategic learning approach -variable (stra) is  significant (p=0.177) so we'll exclude them from the final model.
 
 
 ### Final model
@@ -135,13 +129,13 @@ From the summary we can see, that the surface learning variable (surf) doesn't h
 # remove the variable from the model and fit the model again without it.
 ```
 
-```{r fit-attitude_stra, cache = TRUE}
+```{r fit-attitude_stra, cache = FALSE}
 model_attitude_stra <- lm(
   data = learning2014, 
-  formula = points ~ attitude + stra)
+  formula = points ~ attitude)
 ```
 
-```{r model_model_attitude_stra_summary, echo = FALSE, cache = TRUE}
+```{r model_model_attitude_stra_summary, echo = FALSE, cache = FALSE}
 model_attitude_stra_summary <- apa_print(model_attitude_stra)
 knitr::kable(
   model_attitude_stra_summary$table,
@@ -151,6 +145,8 @@ knitr::kable(
 
 
 For the final model `r render(wrapFTest(model_attitude_stra, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra)$adj.r.squared, 2)`.
+
+We see that R^2^ stays the same for the revised model. Based on the model coefficients (estimate) and 95% confidence interval for the estiate, we see that for the one unit increase in attitude (predictor) variable, the increase in points is between 2.41 and 4.65, average increase being 3.53 points.
 
 ## Regression diagnostics
 
@@ -202,23 +198,23 @@ Residual vs. leverage -plot helps to find influential cases. Not all outliers ha
 
 Even though we just concluded that there's no influencial individual cases in the data, we can see from the plots that there are few outlying cases in non-critical spots of the Residual vs. leverage plot. What happens if we exclude them from the data? To do it, we have to single out the cases from the data using Cook's distance.
 
-```{r cooks-distance, echo = FALSE, cache = TRUE}
+```{r cooks-distance, echo = FALSE, cache = FALSE}
 gg_cooksd(
   model_attitude_stra,
   scale.factor = 1, show.threshold = FALSE) + 
   theme_bw()
 ```
 
-Just for the sake of curiosity, let's investige how excluding two outlier cases (56 & 145) has an effect on our regression model. 
+Just for the sake of curiosity, let's investige how excluding three outlier cases (36, 56 & 71) has an effect on our regression model. 
 
-```{r fit-attitude_stra-excluded-cases, cache = TRUE}
+```{r fit-attitude_stra-excluded-cases, cache = FALSE}
 learning2014$id <- 1:dim(learning2014)[1]
 model_attitude_stra_excluded <- lm(
-  data = learning2014 %>% filter(!id %in% c(35, 145)), 
-  formula = points ~ attitude + stra)
+  data = learning2014 %>% filter(!id %in% c(35, 56, 71)), 
+  formula = points ~ attitude)
 ```
 
-```{r model_model_attitude_stra_excluded-summary, echo = FALSE, cache = TRUE}
+```{r model_model_attitude_stra_excluded-summary, echo = FALSE, cache = FALSE}
 model_attitude_stra_summary_excluded <- apa_print(model_attitude_stra_excluded)
 knitr::kable(
   model_attitude_stra_summary_excluded$table,
@@ -227,24 +223,24 @@ knitr::kable(
 ```
 
 
-For the model created using data without cases 35 and 145, the `r render(wrapFTest(model_attitude_stra_excluded, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_excluded)$adj.r.squared, 2)`.
+For the model created using data without cases 35, 56, and 71, the `r render(wrapFTest(model_attitude_stra_excluded, pSmallCutoff=0, format="markdown"))` Adjusted <i>R^2^</i> is `r round(summary(model_attitude_stra_excluded)$adj.r.squared, 2)`.
 
-The fit of the model seems to be marginally better when two outlying cases are excluded. Let's see from the data what kind of cases these are so that we could decide if it is prudent to consider them outliers.
+The fit of the model seems to be marginally better when three outlying cases are excluded. Let's see from the data what kind of cases these are so that we could decide if it is prudent to consider them outliers.
 
 ```{r excluded-cases-table, echo = FALSE, cache = TRUE}
 case_colnames <- c("Gender","Age","Attitude","Deep", "Strategic","Surface","Points")
 knitr::kable(
-  learning2014 %>% filter(id %in% c(35, 145)) %>% select(-id),
+  learning2014 %>% filter(id %in% c(35, 56, 71)) %>% select(-id),
   format="html", col.names = case_colnames, digits = 2, caption = "Outlier cases") %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
-Looking the data, these unfortunate students have scored very low in the test, even though their motivation is strong. It might be that some external cause has affected their test performance as other low-scoring (points <=10) students somewhat differ from these cases.
+Looking the data, two unfortunate students have scored very low in the test, even though their motivation is strong. It might be that some external cause has affected their test performance as other low-scoring (points <=10) students somewhat differ from these cases. There is also one student whose attitude score is very low but who has achieved high points in tests.
 
 ```{r low-scoring-students, echo = FALSE, cache = TRUE}
 case_colnames <- c("Gender","Age","Attitude","Deep", "Strategic","Surface","Points")
 knitr::kable(
   learning2014 %>% filter(points <= 10) %>% select(-id),
-  format="html", col.names = case_colnames, digits = 2, caption = "Low-scoring students") %>% 
+  format="html", col.names = case_colnames, digits = 2, caption = "Outlier students") %>% 
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
 
