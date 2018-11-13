@@ -1,6 +1,6 @@
-```{r chapter-3-setup}
+```{r chapter-3-setup, echo = FALSE, message = FALSE}
+library(MASS)
 library(here)
-library(PerformanceAnalytics)
 library(data.table)
 library(tidyverse)
 library(hrbrthemes)
@@ -11,6 +11,8 @@ library(finalfit)
 library(sigr)
 library(magrittr)
 library(ggmosaic)
+library(dplyr)
+select <- dplyr::select
 ```
 
 ## Week 3 – Logistic regression
@@ -69,8 +71,8 @@ In addition, the following variables were created for the analysis
 * high_use - binary variable, TRUE if alc_use > 2
 
 
-```{r prepare-dataset}
-categorical_colums <- c(
+```{r prepare-dataset, echo = FALSE}
+categorical_columns <- c(
   "school",
   "sex",
   "address",
@@ -100,9 +102,9 @@ categorical_colums <- c(
 )
 
 alc %<>%
-       mutate_at(categorical_colums, funs(factor(.))) %>% select(categorical_colums,absences)
+       mutate_at(categorical_columns, funs(factor(.))) %>% select(categorical_columns,absences)
 
-alc %<>% mutate(absnt = GroupNumeric(absences, n = 5)) %>% select(categorical_colums,absnt)
+alc %<>% mutate(absnt = GroupNumeric(absences, n = 5)) %>% select(categorical_columns,absnt)
 ```
 
 
@@ -116,7 +118,7 @@ alc %<>% mutate(absnt = GroupNumeric(absences, n = 5)) %>% select(categorical_co
 taumatrix <- GKtauDataframe(alc)
 ```
 
-```{r tau-matrix, fig.width=10, fig.height=8, echo = FALSE}
+```{r tau-matrix, fig.width=10, fig.height=8, echo = FALSE, cache = TRUE}
 plot(taumatrix,colorPlot = FALSE,diagSize = 0.2)
 ```
 
@@ -141,56 +143,118 @@ absnt_labels <- c("0–1", "2", "3–4", "5–7", ">8")
 goout_labels <- c("vlow", "low", "mod", "high", "vhigh")
 alc_labels <- c("low","high")
 alc %<>% transmute(
-  hu = high_use,
   high_use = factor(high_use, labels = alc_labels),
+  hu = as.numeric(high_use),
   studytime = factor(studytime, labels = studytime_labels),
   absnt = factor(absnt, labels = absnt_labels),
   goout = factor(goout, labels = goout_labels),
   sex = sex
   )
 
+saveRDS(alc, file = here("data/chapter3_alc_final_dataset.Rds"))
 
 
 ```
 
-```{r tau-matrix-final}
-taumatrix <- GKtauDataframe(alc)
+```{r tau-matrix-final, echo = FALSE, cache = TRUE}
+taumatrix <- GKtauDataframe(alc %>% select(-hu))
 plot(taumatrix,colorPlot = TRUE,diagSize = 0.6)
 ```
 
 
-```{r visualize-final-dataset,fig.width=10, fig.height=4, echo = FALSE}
+```{r visualize-going-out,fig.width=10, fig.height=4, echo = FALSE, cache = TRUE}
 ggplot(alc) +
     geom_mosaic(aes(x=product(sex, goout), fill=high_use)) +
     labs(
       x = "alcohol usage vs. frequency of going out",
       y = "gender",
       fill='level of alcohol usage',
-      title = "Relationship of partying, alcohol use and sex"
-    )
+      title = "Relationship of partying, alcohol use and gender"
+    ) +
+theme_minimal() +
+theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
       
   
 
 ```
 
 
+
+```{r visualize-abseentism,fig.width=10, fig.height=4, echo = FALSE, cache = TRUE}
+ggplot(alc) +
+    geom_mosaic(aes(x=product(sex, absnt), fill=high_use)) +
+    labs(
+      x = "alcohol usage vs. abseentism",
+      y = "gender",
+      fill='level of alcohol usage',
+      title = "Relationship of abseentism, alcohol use and gender"
+    ) + 
+theme_minimal() +
+theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
+      
+  
+
+```
+
+
+```{r visualize-studytime,fig.width=11, fig.height=6, echo = FALSE, cache = TRUE}
+ggplot(alc) +
+    geom_mosaic(aes(x=product(sex, studytime), fill=high_use)) +
+    labs(
+      x = "alcohol usage vs. time dedicated to studies",
+      y = "gender",
+      fill='level of alcohol usage',
+      title = "Relationship of time dedicated to studies, alcohol use and gender"
+    ) +
+theme_minimal() +
+theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
+      
+  
+
+```
+
+Hypothesis: going frequently out with friends contributes to high alocol consumption
     
 
 Numerically and graphically explore the distributions of your chosen variables and their relationships with alcohol consumption (use for example cross-tabulations, bar plots and box plots). Comment on your findings and compare the results of your exploration to your previously stated hypotheses. (0-5 points)
 
-Use logistic regression to statistically explore the relationship between your chosen variables and the binary high/low alcohol consumption variable as the target variable. Present and interpret a summary of the fitted model. Present and interpret the coefficients of the model as odds ratios and provide confidence intervals for them. Interpret the results and compare them to your previously stated hypothesis. Hint: If your model includes factor variables see for example the first answer of this stackexchange thread on how R treats and how you should interpret these variables in the model output (or use some other resource to study this). (0-5 points)
-
 ```{r fit-glm-1}
+# Use logistic regression to statistically explore the relationship between 
+# your chosen variables and the binary high/low alcohol consumption variable 
+# as the target variable. Present and interpret a summary of the fitted model.
+
 alc_glm_first <- glm(
-  formula = high_use ~ absnt + studytime + goout + sex,
+  formula = high_use ~ goout + sex + absnt + studytime,
   family = "binomial", 
   data = alc)
 summary(alc_glm_first)
 ```
 
+
+
+```{r alc_glm_first_coef}
+coef(alc_glm_first)
+```
+
+
+Present and interpret the coefficients of the model as odds ratios and provide confidence intervals for them. Interpret the results and compare them to your previously stated hypothesis. 
+ 
+
+Hint: If your model includes factor variables see for example the first answer of this stackexchange thread on how R treats and how you should interpret these variables in the model output (or use some other resource to study this). (0-5 points)
+
+
+
 ```{r fit-glm-2}
 alc_glm_second <- glm(
-  formula = hu ~ goout + sex,
+  formula = high_use ~ goout + sex,
+  family = "binomial", 
+  data = alc)
+summary(alc_glm_second)
+```
+
+```{r fit-glm-3}
+alc_glm_second <- glm(
+  formula = high_use ~ goout * sex,
   family = "binomial", 
   data = alc)
 summary(alc_glm_second)
@@ -216,6 +280,14 @@ Using the variables which, according to your logistic regression model, had a st
 Bonus: Perform 10-fold cross-validation on your model. Does your model have better test set performance (smaller prediction error using 10-fold cross-validation) compared to the model introduced in DataCamp (which had about 0.26 error). Could you find such a model? (0-2 points to compensate any loss of points from the above exercises)
 
 Super-Bonus: Perform cross-validation to compare the performance of different logistic regression models (= different sets of predictors). Start with a very high number of predictors and explore the changes in the training and testing errors as you move to models with less predictors. Draw a graph displaying the trends of both training and testing errors by the number of predictors in the model. (0-4 points to compensate any loss of points from the above exercises)
+
+```{r aic-stepwise-selection}
+model <- glm(
+  high_use ~. , data=alc[,-2],
+  family = binomial) %>% 
+  stepAIC(trace = FALSE)
+summary(model)
+```
 
 
 
