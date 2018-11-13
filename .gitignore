@@ -4,4 +4,5 @@
 .Ruserdata
 .DS_Store
 IODS-project.Rproj
-
+*_cache
+*_files
