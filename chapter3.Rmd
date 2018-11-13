@@ -12,6 +12,7 @@ library(sigr)
 library(magrittr)
 library(ggmosaic)
 library(dplyr)
+# For overriding MASS select() 
 select <- dplyr::select
 ```
 
@@ -118,7 +119,11 @@ alc %<>% mutate(absnt = GroupNumeric(absences, n = 5)) %>% select(categorical_co
 taumatrix <- GKtauDataframe(alc)
 ```
 
-```{r tau-matrix, fig.width=10, fig.height=8, echo = FALSE, cache = TRUE}
+Because there are as many as `r dim(alc) ` variables in the dataset, choosing interesting and hopefully fruitful variables just by guessing is not likely to succeed. Therefore, let's use Goodman-Kruskal tau to explore associations between variables in the dataset. 
+
+We have to use tau for this, instead of familiar Pearson correlation, as it doesn't give us useful results when variables are not not continuous. It should be noted, that even though many of the variables in the dataset are numerical (such as studytime, frequency of going out and amount of abseentism), in fact they are ordered categorical variables and therefore using tau to study association is sensible choice.
+
+```{r tau-matrix, fig.width=11, fig.height=8, echo = FALSE, cache = TRUE}
 plot(taumatrix,colorPlot = FALSE,diagSize = 0.2)
 ```
 
@@ -156,38 +161,24 @@ saveRDS(alc, file = here("data/chapter3_alc_final_dataset.Rds"))
 
 ```
 
+It can be seen from the initial Goodman-Kruskal tau-matrix that the association between heavy drinking and other variables is strongest between frenquency of going out with friends, amount of abseentism, time dedicated for studying and gender. It should be noted that the association with gender is as strong as with freetime, but intuitively if feels more reasonable study the association of gender to the drinking habits than the amount of free time.
+
 ```{r tau-matrix-final, echo = FALSE, cache = TRUE}
 taumatrix <- GKtauDataframe(alc %>% select(-hu))
 plot(taumatrix,colorPlot = FALSE, diagSize = 0.6)
 ```
 
 
-```{r visualize-going-out,fig.width=10, fig.height=4, echo = FALSE, cache = TRUE}
+
+
+```{r visualize-abseentism,fig.width=10, fig.height=5, echo = FALSE, cache = TRUE}
 ggplot(alc) +
-    geom_mosaic(aes(x=product(sex, goout), fill=high_use)) +
+    geom_mosaic(aes(x=product(sex, goout, absnt), fill = high_use)) +
     labs(
-      x = "alcohol usage vs. frequency of going out",
-      y = "gender",
+      x = "gender - amount of abseentism",
+      y = "alcohol usage - frequency of going out",
       fill='level of alcohol usage',
-      title = "Relationship of partying, alcohol use and gender"
-    ) +
-theme_minimal() +
-theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
-      
-  
-
-```
-
-
-
-```{r visualize-abseentism,fig.width=10, fig.height=4, echo = FALSE, cache = TRUE}
-ggplot(alc) +
-    geom_mosaic(aes(x=product(sex, absnt), fill=high_use)) +
-    labs(
-      x = "alcohol usage vs. abseentism",
-      y = "gender",
-      fill='level of alcohol usage',
-      title = "Relationship of abseentism, alcohol use and gender"
+      title = "Relationship of gender, frequency of going out, amount of absenteeism and alcohol use"
     ) + 
 theme_minimal() +
 theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
@@ -197,14 +188,14 @@ theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
 ```
 
 
-```{r visualize-studytime,fig.width=11, fig.height=6, echo = FALSE, cache = TRUE}
+```{r visualize-studytime,fig.width=10, fig.height=5, echo = FALSE, cache = TRUE}
 ggplot(alc) +
-    geom_mosaic(aes(x=product(sex, studytime), fill=high_use)) +
+    geom_mosaic(aes(x=product(sex, studytime, absnt), fill=high_use)) +
     labs(
-      x = "alcohol usage vs. time dedicated to studies",
-      y = "gender",
+      x = "gender - amount of absenteeism",
+      y = "alcohol usage - time dedicated to studies",
       fill='level of alcohol usage',
-      title = "Relationship of time dedicated to studies, alcohol use and gender"
+      title = "Relationship of gender, time dedicated to studies, amount of absenteeism and alcohol use"
     ) +
 theme_minimal() +
 theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
