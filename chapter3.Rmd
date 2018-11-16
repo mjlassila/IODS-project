@@ -255,18 +255,51 @@ alc$predict_high_use<- (alc$prob_high_use) > 0.5
 knitr::kable(
   table(
   alcohol_use = alc$high_use, 
-  prediction = factor(alc$predict_high_use, labels = alc_labels))
+  prediction = factor(alc$predict_high_use, labels = alc_labels)),
+  col.names = c("Actual","Predicted"),
+  caption = "Predicted vs. actual alcohol use"
 
 )
-
 ```
+
+```{r regression-interpretation, echo = FALSE, evan = FALSE}
+# Using the variables which, according to your logistic regression model,
+# had a statistical relationship with high/low alcohol consumption, 
+# explore the predictive power of you model. 
+# 
+# Provide a 2x2 cross tabulation of predictions versus the actual values 
+# and optionally display a graphic visualizing both the actual values and
+# the predictions
+```
+
+
+
+```{r odds-ratio, echo = FALSE}
+odds_ratio <- exp(coef(alc_glm_second))
+ci <- exp(confint(alc_glm_second)) 
+knitr::kable(table(cbind(odds_ratio, ci)))
+```
+
+The training error of the model is 
+
+
 
 prediction
 high_use FALSE TRUE
     low    247   21
     high    57   57
 
-Using the variables which, according to your logistic regression model, had a statistical relationship with high/low alcohol consumption, explore the predictive power of you model. Provide a 2x2 cross tabulation of predictions versus the actual values and optionally display a graphic visualizing both the actual values and the predictions. Compute the total proportion of inaccurately classified individuals (= the training error) and comment on all the results. Compare the performance of the model with performance achieved by some simple guessing strategy. (0-3 points)
+
+```{r model-performance-comparison, echo = FALSE, eval = FALSE}
+
+# Compute the total proportion of inaccurately classified individuals
+# (= the training error) and comment on all the results. 
+# Compare the performance of the model with performance achieved by some simple guessing strategy. (0-3 points)
+
+```
+
+
+
 
 Bonus: Perform 10-fold cross-validation on your model. Does your model have better test set performance (smaller prediction error using 10-fold cross-validation) compared to the model introduced in DataCamp (which had about 0.26 error). Could you find such a model? (0-2 points to compensate any loss of points from the above exercises)
 
