@@ -163,12 +163,16 @@ saveRDS(alc, file = here("data/chapter3_alc_final_dataset.Rds"))
 
 It can be seen from the initial Goodman-Kruskal tau-matrix that the association between heavy drinking and other variables is strongest between frenquency of going out with friends, amount of abseentism, time dedicated for studying and gender. It should be noted that the association with gender is as strong as with freetime, but intuitively if feels more reasonable study the association of gender to the drinking habits than the amount of free time.
 
+Based on observed associations in the data and personal experience, a reasonable initial hypothesis would be:
+
+> Going often out with friends and is correlated with high drinking. Gender doesn't make signinificant difference, even tough male students tend to drink more. Time dedicaded to studies is inversely associated with high alcohol use but igh abseentism has no significant association with heavy drinking
+
 ```{r tau-matrix-final, echo = FALSE, cache = TRUE}
 taumatrix <- GKtauDataframe(alc %>% select(-hu))
 plot(taumatrix,colorPlot = FALSE, diagSize = 0.6)
 ```
 
-
+Next we'll observe the relationship of variables using mosaic plots, which allow us to explore the data in multiple dimensions at the same time.
 
 
 ```{r visualize-abseentism,fig.width=10, fig.height=5, echo = FALSE, cache = TRUE}
@@ -204,10 +208,9 @@ theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
 
 ```
 
-Hypothesis: going frequently out with friends contributes to high alocol consumption
-    
+<!-- Numerically and graphically explore the distributions of your chosen variables and their relationships with alcohol consumption (use for example cross-tabulations, bar plots and box plots). Comment on your findings and compare the results of your exploration to your previously stated hypotheses. (0-5 points) -->
 
-Numerically and graphically explore the distributions of your chosen variables and their relationships with alcohol consumption (use for example cross-tabulations, bar plots and box plots). Comment on your findings and compare the results of your exploration to your previously stated hypotheses. (0-5 points)
+Looking the plots it seems that our initial hypothesis was somewhat inaccurate. Differences between genders are at least visually observing large. Going often out with friends is indeed associated with high level of alcohol use, especially when the abseentism is common (top right corner of the first plot). Time dedicated to studies is inversely correlated with high alcohol use and amount of abseentism (top right corner). 
 
 ```{r fit-glm-1}
 # Use logistic regression to statistically explore the relationship between 
@@ -215,12 +218,13 @@ Numerically and graphically explore the distributions of your chosen variables a
 # as the target variable. Present and interpret a summary of the fitted model.
 
 alc_glm_first <- glm(
-  formula = high_use ~ goout + sex + absnt + studytime,
-  family = "binomial", 
+  formula = high_use ~ goout + sex + absnt + studytime - 1, # -1 => fit the model without intercept
+  family = "binomial",                                     # 
   data = alc)
 summary(alc_glm_first)
 ```
 
+For our initial variables, *frequency of going out with friends*, *gender*, *level of abseentism* and *time dedicated to studies* make a statistically significant effect on level of drinking
 
 
 ```{r alc_glm_first_coef}
@@ -237,28 +241,24 @@ Hint: If your model includes factor variables see for example the first answer o
 
 ```{r fit-glm-2}
 alc_glm_second <- glm(
-  formula = high_use ~ goout + sex,
-  family = "binomial", 
-  data = alc)
-summary(alc_glm_second)
-```
-
-```{r fit-glm-3}
-alc_glm_second <- glm(
-  formula = high_use ~ goout * sex,
+  formula = high_use ~ goout + sex + absnt - 1,
   family = "binomial", 
   data = alc)
 summary(alc_glm_second)
 ```
 
 
-```{r predict-using-model}
+```{r predict-using-model, echo = FALSE}
 predicted_use <- predict(alc_glm_second, type = "response")
 alc$prob_high_use <- predicted_use
 alc$predict_high_use<- (alc$prob_high_use) > 0.5
+knitr::kable(
+  table(
+  alcohol_use = alc$high_use, 
+  prediction = factor(alc$predict_high_use, labels = alc_labels))
 
-table(high_use = alc$hu, prediction = alc$predict_high_use)
-mean(abs(as.numeric(alc$hu) - alc$prob_high_use) > 0.5)
+)
+
 ```
 
 prediction
