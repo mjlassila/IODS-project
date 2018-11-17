@@ -29,7 +29,7 @@ names(alc)
 # skim(alc)
 ```
 
-The original dataset has the following variables:
+The original dataset `{r dim(alc)[1]`  has the following variables:
 
 
 * school - student's school (binary: 'GP' - Gabriel Pereira or 'MS' - Mousinho da Silveira) 
@@ -244,6 +244,9 @@ For our initial variables, *frequency of going out with friends*, *gender*, *lev
 coef(alc_glm_first)
 ```
 
+Sukupuoli on luokiteltu muuttuja ja sen kertoimen tulkinta on erilainen kuin muiden muuttujien kertoimien tulkinta. R on valinnut naiset vertailuryhmäksi ja miehet ovat selittävä muuttuja. Vertailuryhmän eli naisten kerroin on mallin vakiotermi. Miesten kerroin kuvaa eroa vakiotermiin eli naisten kertoimeen. Miesten todellinen kerroin on vakiotermi-miesten kerroin eli noin -1.08-0.78=-0.3. Selittäjistä tilastollisesti merkitsevä kertoimen estimaatti on poissaoloilla, opiskeluun käytetyllä ajalla, miehillä ja vakiotermillä. Se että miesten kertoimen estimaatti on tilastollisesti merkitsevä tarkoittaa että hypoteesi että vakiotermin eli vertailuryhmän kertoimen ja miesten kertoimen erotus on nolla voidaan hylätä yhden prosentin merkitsevyystasolla. 
+
+
 ```{r odds_ratio_first, echo = FALSE, message = FALSE}
 odds_ratio <- exp(coef(alc_glm_first))
 ci <- exp(confint(alc_glm_first)) 
@@ -322,7 +325,7 @@ knitr::kable(
 ```
 
 
-
+Crosstables indicate that model tends to overpredict the proportion of students who are low-drinkers (actual) and underpredict the proportion of high-drinking students.
 
 
 ```{r odds-ratio, echo = FALSE, message = FALSE}
