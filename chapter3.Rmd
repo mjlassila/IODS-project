@@ -210,9 +210,15 @@ theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
 
 <!-- Numerically and graphically explore the distributions of your chosen variables and their relationships with alcohol consumption (use for example cross-tabulations, bar plots and box plots). Comment on your findings and compare the results of your exploration to your previously stated hypotheses. (0-5 points) -->
 
-Looking the plots it seems that our initial hypothesis was somewhat inaccurate. Differences between genders are at least visually observing large. Going often out with friends is indeed associated with high level of alcohol use, especially when the abseentism is common (top right corner of the first plot). Time dedicated to studies is inversely correlated with high alcohol use and amount of abseentism (top right corner). 
+Looking the plots it seems that our initial hypothesis was somewhat inaccurate. Differences between genders are at least visually observing large. Going often out with friends is indeed associated with high level of alcohol use, especially when the abseentism is common (top right corner of the first plot). On the other hand, the size of this group is not very large, so this three-way association might not be strong.  Time dedicated to studies is inversely correlated with high alcohol use and amount of abseentism (top right corner). 
 
-```{r fit-glm-1}
+### Modeling
+
+
+
+#### Initial model
+
+```{r fit-glm-1, echo = FALSE, eval = TRUE}
 # Use logistic regression to statistically explore the relationship between 
 # your chosen variables and the binary high/low alcohol consumption variable 
 # as the target variable. Present and interpret a summary of the fitted model.
@@ -238,18 +244,23 @@ For our initial variables, *frequency of going out with friends*, *gender*, *lev
 coef(alc_glm_first)
 ```
 
-```{r odds_ratio_first, echo = FALSE}
+```{r odds_ratio_first, echo = FALSE, message = FALSE}
 odds_ratio <- exp(coef(alc_glm_first))
 ci <- exp(confint(alc_glm_first)) 
-table(cbind(odds_ratio, ci))
+knitr::kable(cbind(odds_ratio, ci), col.names = c("OR","CI (2,5%)","CI 97,5%"))
+```
+
+```{r predict-using-simple-model, echo = FALSE}
+alc_simple <- alc
+predicted_use <- predict(alc_glm_first, type = "response")
+alc_simple$prob_high_use <- predicted_use
+alc_simple$predict_high_use <- (alc_simple$prob_high_use) > 0.5
 ```
 
 
 
 
-
-
-
+#### Final model
 
 
 ```{r fit-glm-2}
@@ -276,6 +287,20 @@ alc$prob_high_use <- predicted_use
 alc$predict_high_use <- (alc$prob_high_use) > 0.5
 ```
 
+```{r predict-crosstable, echo = FALSE}
+
+crosstable <- table(high_use = alc$high_use, prediction = alc$prob_high_use > 0.5)
+
+knitr::kable(
+  crosstable,
+  col.names = c("predicted low","predicted high"),
+  caption = "Predicted vs. actual alcohol use (counts)"
+
+)
+```
+
+
+
 ```{r actual_vs_predicted, echo = FALSE}
 prob_table <- table(
     alcohol_use = alc$high_use, 
@@ -290,11 +315,13 @@ prob_table <- table(
 
 knitr::kable(
    prob_table,
-  col.names = c("low","high","Sum"),
-  caption = "Predicted vs. actual alcohol use"
+  col.names = c("predicted low","predicted high","Sum"),
+  caption = "Predicted vs. actual alcohol use (%)"
 
 )
 ```
+
+
 
 
 
@@ -304,6 +331,8 @@ ci <- round(exp(confint(alc_glm_second)),2)
 knitr::kable(cbind(odds_ratio, ci), col.names = c("OR","CI (2,5%)","CI 97,5%"))
 ```
 
+
+## Performance comparison
 
 ```{r model-performance-comparison, echo = FALSE, eval = FALSE}
 
@@ -320,13 +349,16 @@ loss_func <- function(class, prob) {
 }
 
 training_error <- loss_func(class = alc$hu, prob = alc$predict_high_use)
+training_error_simple <- loss_func(class = alc_simple$hu, prob = alc_simple$predict_high_use)
 ```
-The model has `r round(training_error)`
+The model has `r round(training_error,3)` training error. Error for initial model is 
+`r round(training_error_simple,3)` so it seems that keeping studytime predictor in the
+model would have been useful.
 
 
 
 
-```{r}
+```{r echo = FALSE, eval = FALSE}
 # Bonus: Perform 10-fold cross-validation on your model. 
 # Does your model have better test set performance (smaller prediction error using 10-fold cross-validation) compared to the model introduced in DataCamp (which had about 0.26 error). 
 # Could you find such a model? (0-2 points to compensate any loss 
@@ -337,8 +369,9 @@ The model has `r round(training_error)`
 ```{r cross-validation}
 library(boot)
 cv <- cv.glm(data = alc, cost = loss_func, glmfit = alc_glm_second, K = 10)
+cv_simple <- cv.glm(data = alc_simple, cost = loss_func, glmfit = alc_glm_first, K = 10)
 ```
-Based on the 10-fold cross-validation, the prediction error for the model is `r round(cv$delta[1],2)` so it seems that this model performs abit better than the model introduced in the DataCamp which had 0.26 error.
+Based on the 10-fold cross-validation, the prediction error for the model is `r round(cv$delta[1],2)` so it seems that this model performs a bit better than the model introduced in the DataCamp which had 0.26 error. Surprisingly, prediction error for the initial model is `r round(cv_simple$delta[1],2)`, so it is the best model of all three. To conlude, this somewhat unexpected result idicates that it might be useful to keep also marginally signitficant predictors in the model, as was the case with studytime predictor.
 
 
 
