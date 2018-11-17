@@ -72,7 +72,7 @@ In addition, the following variables were created for the analysis
 * high_use - binary variable, TRUE if alc_use > 2
 
 
-```{r prepare-dataset, echo = FALSE}
+```{r prepare-dataset, echo = FALSE, cache = FALSE}
 categorical_columns <- c(
   "school",
   "sex",
@@ -127,7 +127,7 @@ We have to use tau for this, instead of familiar Pearson correlation, as it does
 plot(taumatrix,colorPlot = FALSE,diagSize = 0.2)
 ```
 
-```{r create-final-dataset, echo = FALSE}
+```{r create-final-dataset, echo = FALSE, cache = FALSE}
 alc %<>%  select(sex,high_use,goout,studytime,absnt)
 
 # Factor variables need to be named in meaninful way following the
@@ -148,8 +148,8 @@ absnt_labels <- c("0–1", "2", "3–4", "5–7", ">8")
 goout_labels <- c("vlow", "low", "mod", "high", "vhigh")
 alc_labels <- c("low","high")
 alc %<>% transmute(
+  hu = as.logical(high_use),
   high_use = factor(high_use, labels = alc_labels),
-  hu = as.numeric(high_use),
   studytime = factor(studytime, labels = studytime_labels),
   absnt = factor(absnt, labels = absnt_labels),
   goout = factor(goout, labels = goout_labels),
@@ -227,15 +227,28 @@ summary(alc_glm_first)
 For our initial variables, *frequency of going out with friends*, *gender*, *level of abseentism* and *time dedicated to studies* make a statistically significant effect on level of drinking
 
 
+```{r }
+# Present and interpret the coefficients of the model as odds ratios and provide confidence intervals for them. Interpret the results and compare them to your previously stated hypothesis. 
+
+# Hint: If your model includes factor variables see for example the first answer of this stackexchange thread on how R treats and how you should interpret these variables in the model output (or use some other resource to study this). (0-5 points)
+```
+
+
 ```{r alc_glm_first_coef}
 coef(alc_glm_first)
 ```
 
+```{r odds_ratio_first, echo = FALSE}
+odds_ratio <- exp(coef(alc_glm_first))
+ci <- exp(confint(alc_glm_first)) 
+table(cbind(odds_ratio, ci))
+```
 
-Present and interpret the coefficients of the model as odds ratios and provide confidence intervals for them. Interpret the results and compare them to your previously stated hypothesis. 
- 
 
-Hint: If your model includes factor variables see for example the first answer of this stackexchange thread on how R treats and how you should interpret these variables in the model output (or use some other resource to study this). (0-5 points)
+
+
+
+
 
 
 
@@ -245,21 +258,6 @@ alc_glm_second <- glm(
   family = "binomial", 
   data = alc)
 summary(alc_glm_second)
-```
-
-
-```{r predict-using-model, echo = FALSE}
-predicted_use <- predict(alc_glm_second, type = "response")
-alc$prob_high_use <- predicted_use
-alc$predict_high_use<- (alc$prob_high_use) > 0.5
-knitr::kable(
-  table(
-  alcohol_use = alc$high_use, 
-  prediction = factor(alc$predict_high_use, labels = alc_labels)),
-  col.names = c("Actual","Predicted"),
-  caption = "Predicted vs. actual alcohol use"
-
-)
 ```
 
 ```{r regression-interpretation, echo = FALSE, evan = FALSE}
@@ -272,22 +270,39 @@ knitr::kable(
 # the predictions
 ```
 
-
-
-```{r odds-ratio, echo = FALSE}
-odds_ratio <- exp(coef(alc_glm_second))
-ci <- exp(confint(alc_glm_second)) 
-knitr::kable(table(cbind(odds_ratio, ci)))
+```{r predict-using-model, echo = FALSE}
+predicted_use <- predict(alc_glm_second, type = "response")
+alc$prob_high_use <- predicted_use
+alc$predict_high_use <- (alc$prob_high_use) > 0.5
 ```
 
-The training error of the model is 
+```{r actual_vs_predicted, echo = FALSE}
+prob_table <- table(
+    alcohol_use = alc$high_use, 
+    prediction = factor(
+      alc$predict_high_use,
+      labels = alc_labels)
+    ) %>%
+  prop.table() %>%
+  `*`(100) %>% 
+  round(1) %>%
+  addmargins()
+
+knitr::kable(
+   prob_table,
+  col.names = c("low","high","Sum"),
+  caption = "Predicted vs. actual alcohol use"
+
+)
+```
 
 
 
-prediction
-high_use FALSE TRUE
-    low    247   21
-    high    57   57
+```{r odds-ratio, echo = FALSE, message = FALSE}
+odds_ratio <- round(exp(coef(alc_glm_second)),2)
+ci <- round(exp(confint(alc_glm_second)),2) 
+knitr::kable(cbind(odds_ratio, ci), col.names = c("OR","CI (2,5%)","CI 97,5%"))
+```
 
 
 ```{r model-performance-comparison, echo = FALSE, eval = FALSE}
@@ -298,20 +313,33 @@ high_use FALSE TRUE
 
 ```
 
+```{r training_error}
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
 
-
-
-Bonus: Perform 10-fold cross-validation on your model. Does your model have better test set performance (smaller prediction error using 10-fold cross-validation) compared to the model introduced in DataCamp (which had about 0.26 error). Could you find such a model? (0-2 points to compensate any loss of points from the above exercises)
-
-Super-Bonus: Perform cross-validation to compare the performance of different logistic regression models (= different sets of predictors). Start with a very high number of predictors and explore the changes in the training and testing errors as you move to models with less predictors. Draw a graph displaying the trends of both training and testing errors by the number of predictors in the model. (0-4 points to compensate any loss of points from the above exercises)
-
-```{r aic-stepwise-selection}
-model <- glm(
-  high_use ~. , data=alc[,-2],
-  family = binomial) %>% 
-  stepAIC(trace = FALSE)
-summary(model)
+training_error <- loss_func(class = alc$hu, prob = alc$predict_high_use)
 ```
+The model has `r round(training_error)`
+
+
+
+
+```{r}
+# Bonus: Perform 10-fold cross-validation on your model. 
+# Does your model have better test set performance (smaller prediction error using 10-fold cross-validation) compared to the model introduced in DataCamp (which had about 0.26 error). 
+# Could you find such a model? (0-2 points to compensate any loss 
+# of points from the above exercises)
+```
+
+
+```{r cross-validation}
+library(boot)
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = alc_glm_second, K = 10)
+```
+Based on the 10-fold cross-validation, the prediction error for the model is `r round(cv$delta[1],2)` so it seems that this model performs abit better than the model introduced in the DataCamp which had 0.26 error.
+
 
 
 
