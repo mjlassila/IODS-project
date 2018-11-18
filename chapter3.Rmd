@@ -119,8 +119,9 @@ alc %<>% mutate(absnt = GroupNumeric(absences, n = 5)) %>% select(categorical_co
 # consumption. (0-1 point)
 taumatrix <- GKtauDataframe(alc)
 ```
+Numerical abseentism score was transformed to five-class categorical variable (0–1, 2, 3–4, 5–7, >8) for the purpose of the analysis.
 
-Because there are as many as `r dim(alc)[2] ` variables in the dataset, choosing interesting and hopefully fruitful variables just by guessing is not likely to succeed. Therefore, let's use [Goodman-Kruskal tau](https://cran.r-project.org/web/packages/GoodmanKruskal/vignettes/GoodmanKruskal.html) to explore associations between variables in the dataset. 
+Because there are as many as `r dim(alc)[2] ` variables in the final dataset, choosing interesting and hopefully fruitful variables just by guessing is not likely to succeed. Therefore, let's use [Goodman-Kruskal tau](https://cran.r-project.org/web/packages/GoodmanKruskal/vignettes/GoodmanKruskal.html) to explore associations between variables in the dataset. 
 
 We have to use tau for this, instead of familiar Pearson correlation, as it doesn't give us useful results when variables are not continuous. It should be noted, that even though many of the variables in the dataset are numerical (such as studytime, frequency of going out and amount of abseentism), according to the dataset description they are actually ordered categorical variables and therefore using tau to study association is sensible choice.
 
