@@ -1,0 +1,403 @@
+```{r chapter-3-setup, echo = FALSE, message = FALSE, warning = FALSE}
+library(MASS)
+library(here)
+library(data.table)
+library(tidyverse)
+library(hrbrthemes)
+library(ggcorrplot)
+library(GoodmanKruskal)
+library(lindia)
+library(finalfit)
+library(sigr)
+library(magrittr)
+library(ggmosaic)
+library(dplyr)
+library(papaja)
+# For overriding MASS select() 
+select <- dplyr::select
+```
+
+## Week 3 – Logistic regression
+
+```{r load-data, echo = FALSE}
+
+# Print out the names of the variables in the data and describe the data set
+# briefly, assuming the reader has no previous knowledge of it. 
+# There is information related to the data here. (0-1 point)
+
+alc <- fread(here("data/chapter3_alc.csv"))
+# skim(alc)
+```
+
+Our goal if to predict the level of alcohol usage [based on data](https://archive.ics.uci.edu/ml/datasets/student+performance) collected using school reports and questionnaires  from two Portugese secondary-level schools. The original dataset (n=`r dim(alc)[1]`)  has the following variables:
+
+
+* school - student's school (binary: 'GP' - Gabriel Pereira or 'MS' - Mousinho da Silveira) 
+* sex - student's sex (binary: 'F' - female or 'M' - male) 
+* age - student's age (numeric: from 15 to 22) 
+* address - student's home address type (binary: 'U' - urban or 'R' - rural) 
+* famsize - family size (binary: 'LE3' - less or equal to 3 or 'GT3' - greater than 3) 
+* pstatus - parent's cohabitation status (binary: 'T' - living together or 'A' - apart) 
+* medu - mother's education (numeric: 0 - none, 1 - primary education (4th grade), 2  - 5th to 9th grade, 3 - secondary education or 4 - higher education) 
+* fedu - father's education (numeric: 0 - none, 1 - primary education (4th grade), 2 - 5th to 9th grade, 3 - secondary education or 4 - higher education) 
+* mjob - mother's job (nominal: 'teacher', 'health' care related, civil 'services' (e.g. administrative or police), 'at_home' or 'other') 
+* fjob - father's job (nominal: 'teacher', 'health' care related, civil 'services' (e.g. administrative or police), 'at_home' or 'other') 
+* reason - reason to choose this school (nominal: close to 'home', school 'reputation', 'course' preference or 'other') 
+* guardian - student's guardian (nominal: 'mother', 'father' or 'other') 
+* traveltime - home to school travel time (numeric: 1 - <15 min., 2 - 15 to 30 min., 3 - 30 min. to 1 hour, or 4 - >1 hour) 
+* studytime - weekly study time (numeric: 1 - <2 hours, 2 - 2 to 5 hours, 3 - 5 to 10 hours, or 4 - >10 hours) 
+* failures - number of past class failures (numeric: n if 1<=n<3, else 4) 
+* schoolsup - extra educational support (binary: yes or no) 
+* famsup - family educational support (binary: yes or no) 
+* paid - extra paid classes within the course subject (Math or Portuguese) (binary: yes or no) 
+* activities - extra-curricular activities (binary: yes or no) 
+* nursery - attended nursery school (binary: yes or no) 
+* higher - wants to take higher education (binary: yes or no) 
+* internet - Internet access at home (binary: yes or no) 
+* romantic - with a romantic relationship (binary: yes or no) 
+* famrel - quality of family relationships (numeric: from 1 - very bad to 5 - excellent) 
+* freetime - free time after school (numeric: from 1 - very low to 5 - very high) 
+* goout - going out with friends (numeric: from 1 - very low to 5 - very high) 
+* dalc - workday alcohol consumption (numeric: from 1 - very low to 5 - very high) 
+* walc - weekend alcohol consumption (numeric: from 1 - very low to 5 - very high) 
+* health - current health status (numeric: from 1 - very bad to 5 - very good) 
+* absences - number of school absences (numeric: from 0 to 93) * 
+* g1 - first period grade (numeric: from 0 to 20) 
+* g2 - second period grade (numeric: from 0 to 20) 
+* g3 - final grade (numeric: from 0 to 20, output target)
+
+In addition, the following variables were created for the analysis
+
+* alc_use - mean of workday and weekend alcohol consumption (numeric)
+* high_use - binary variable, TRUE if alc_use > 2
+
+
+
+```{r prepare-dataset, echo = FALSE, cache = FALSE}
+categorical_columns <- c(
+  "school",
+  "sex",
+  "address",
+  "famsize",
+  "pstatus",
+  "medu",
+  "fedu",
+  "mjob",
+  "fjob",
+  "reason",
+  "guardian",
+  "traveltime",
+  "studytime",
+  "failures",
+  "schoolsup",
+  "famsup",
+  "paid",
+  "activities",
+  "nursery",
+  "higher",
+  "internet",
+  "romantic",
+  "famrel",
+  "freetime",
+  "goout",
+  "high_use"
+)
+
+alc %<>%
+       mutate_at(categorical_columns, funs(factor(.))) %>% select(categorical_columns,absences)
+
+alc %<>% mutate(absnt = GroupNumeric(absences, n = 5)) %>% select(categorical_columns,absnt)
+```
+
+
+
+```{r explore-data-overview, cache = TRUE, echo = FALSE}
+# The purpose of your analysis is to study the relationships between 
+# high/low alcohol consumption and some of the other variables in the data. 
+# To do this, choose 4 interesting variables in the data and for each of them
+# present your personal hypothesis about their relationships with alcohol 
+# consumption. (0-1 point)
+taumatrix <- GKtauDataframe(alc)
+```
+
+Because there are as many as `r dim(alc)[2] ` variables in the dataset, choosing interesting and hopefully fruitful variables just by guessing is not likely to succeed. Therefore, let's use [Goodman-Kruskal tau](https://cran.r-project.org/web/packages/GoodmanKruskal/vignettes/GoodmanKruskal.html) to explore associations between variables in the dataset. 
+
+We have to use tau for this, instead of familiar Pearson correlation, as it doesn't give us useful results when variables are not continuous. It should be noted, that even though many of the variables in the dataset are numerical (such as studytime, frequency of going out and amount of abseentism), according to the dataset description they are actually ordered categorical variables and therefore using tau to study association is sensible choice.
+
+```{r tau-matrix, fig.width=16, fig.height=12, echo = FALSE, cache = TRUE}
+plot(taumatrix,colorPlot = FALSE,diagSize = 0.2)
+```
+
+```{r create-final-dataset, echo = FALSE, cache = FALSE}
+alc %<>%  select(sex,high_use,goout,studytime,absnt)
+
+# Factor variables need to be named in meaninful way following the
+# original data descroption
+
+# studytime - weekly study time (numeric: 1 - <2 hours, 2 - 2 to 5 hours, 3 - 5 to 10 hours, or 4 - >10 hours) 
+# goout - going out with friends (numeric: from 1 - very low to 5 - very high)
+
+# abseentism
+# 0-1, 2, 3-4, 5-7, 8-
+
+# alcohol usage
+
+# High orninary
+
+studytime_labels <- c("<2 h","2–5 h","5–10 h",">10 h")
+absnt_labels <- c("0–1", "2", "3–4", "5–7", ">8")
+goout_labels <- c("vlow", "low", "mod", "high", "vhigh")
+alc_labels <- c("low","high")
+alc %<>% transmute(
+  hu = as.logical(high_use),
+  high_use = factor(high_use, labels = alc_labels),
+  studytime = factor(studytime, labels = studytime_labels),
+  absnt = factor(absnt, labels = absnt_labels),
+  goout = factor(goout, labels = goout_labels),
+  sex = sex
+  )
+
+saveRDS(alc, file = here("data/chapter3_alc_final_dataset.Rds"))
+
+
+```
+
+It can be seen from the initial Goodman-Kruskal tau-matrix that the association between heavy drinking and other variables is strongest between frenquency of going out with friends, amount of abseentism, time dedicated for studying and gender. It should be noted that the association with gender is as strong as with freetime, but intuitively if feels more reasonable study the association of gender to the drinking habits than the amount of free time.
+
+Based on observed associations in the data and personal experience, a reasonable initial hypothesis would be:
+
+> Going often out with friends and is correlated with high drinking. Gender doesn't make signinificant difference, even tough male students tend to drink more. Time dedicaded to studies is inversely associated with high alcohol use but igh abseentism has no significant association with heavy drinking
+
+```{r tau-matrix-final, echo = FALSE, cache = TRUE}
+taumatrix <- GKtauDataframe(alc %>% select(-hu))
+plot(taumatrix,colorPlot = FALSE, diagSize = 0.6)
+```
+
+Next we'll observe the relationship of variables using mosaic plots, which allow us to explore the data in multiple dimensions at the same time.
+
+
+```{r visualize-abseentism,fig.width=10, fig.height=5, echo = FALSE, cache = TRUE}
+ggplot(alc) +
+    geom_mosaic(aes(x=product(sex, goout, absnt), fill = high_use)) +
+    labs(
+      x = "gender - amount of abseentism",
+      y = "alcohol usage - frequency of going out",
+      fill='level of alcohol usage',
+      title = "Relationship of gender, frequency of going out, amount of absenteeism and alcohol use"
+    ) + 
+theme_minimal() +
+theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
+      
+  
+
+```
+
+
+```{r visualize-studytime,fig.width=10, fig.height=5, echo = FALSE, cache = TRUE}
+ggplot(alc) +
+    geom_mosaic(aes(x=product(sex, studytime, absnt), fill=high_use)) +
+    labs(
+      x = "gender - amount of absenteeism",
+      y = "alcohol usage - time dedicated to studies",
+      fill='level of alcohol usage',
+      title = "Relationship of gender, time dedicated to studies, amount of absenteeism and alcohol use"
+    ) +
+theme_minimal() +
+theme(axis.text.x = element_text(angle=45, vjust = 0.5, size = 10))
+      
+  
+
+```
+
+<!-- Numerically and graphically explore the distributions of your chosen variables and their relationships with alcohol consumption (use for example cross-tabulations, bar plots and box plots). Comment on your findings and compare the results of your exploration to your previously stated hypotheses. (0-5 points) -->
+
+Looking the plots it seems that our initial hypothesis was somewhat inaccurate. Differences between genders are at least visually observing large. Going often out with friends is indeed associated with high level of alcohol use, especially when the abseentism is common (top right corner of the first plot). On the other hand, the size of this group is not very large, so this three-way association might not be strong.  Time dedicated to studies is inversely correlated with high alcohol use and amount of abseentism (top right corner). 
+
+### Modeling
+
+
+
+#### Initial model
+
+```{r fit-glm-1, echo = FALSE, eval = TRUE}
+# Use logistic regression to statistically explore the relationship between 
+# your chosen variables and the binary high/low alcohol consumption variable 
+# as the target variable. Present and interpret a summary of the fitted model.
+
+alc_glm_first <- glm(
+  formula = high_use ~ goout + sex + absnt + studytime,
+  family = "binomial",                                     # 
+  data = alc)
+summary(alc_glm_first)
+```
+
+For our initial variables, *frequency of going out with friends*, *gender*, *level of abseentism* and *time dedicated to studies* make a statistically significant effect on level of drinking
+
+
+```{r, eval = FALSE, echo = FALSE }
+# Present and interpret the coefficients of the model as odds ratios and provide confidence intervals for them. Interpret the results and compare them to your previously stated hypothesis. 
+
+# Hint: If your model includes factor variables see for example the first answer of this stackexchange thread on how R treats and how you should interpret these variables in the model output (or use some other resource to study this). (0-5 points)
+```
+
+Looking the odds ratios of the model, it can be stated that being male increases the odds of high alcohol usage over 2 times compared to females, going out frequently or very frequently increses the odds 8-10 times compared to the students who go out very little or not at all. High abseentism also increases the odds of high alcohol consumption 2.87 times compared to the studets who are not in the habit of abseentism.
+
+These model-based observations align pretty well on the conclusions which were made based on the initial visual exploration of the data.
+
+
+```{r odds_ratio_first, echo = FALSE, message = FALSE, warning = FALSE}
+model_summary <- apa_print(alc_glm_first)
+odds_ratio <- exp(coef(alc_glm_first)[c(3,4,5,6,10,12)])
+odds_df <- data.frame(tibble::rownames_to_column(as.data.frame(odds_ratio)))
+odds_df$rowname <- tolower(odds_df$rowname)
+odds_df[odds_df$rowname == "absnt>8",]$rowname <- "abseentism>8"
+names(odds_df) <- c("predictor","odds_ratio")
+odds_df$odds_ratio <- round(odds_df$odds_ratio, 2)
+model_summary_table <- data.frame(model_summary$table[c(3,4,5,6,10,12),])
+model_summary_table[model_summary_table$predictor == "Absnt>8",]$predictor <- "abseentism>8"
+model_summary_table$predictor <- tolower(model_summary_table$predictor)
+model_summary_table <- sjlabelled::remove_all_labels(model_summary_table)
+odds_df <- sjlabelled::remove_all_labels(odds_df)
+summary_col_names <- c("Predictor", "Estimate", "CI (95%)", "t", "p-value", "Odds ratio")
+knitr::kable(
+  model_summary_table %>% inner_join(odds_df), col.names = summary_col_names)
+```
+
+```{r predict-using-simple-model, echo = FALSE}
+alc_simple <- alc
+predicted_use <- predict(alc_glm_first, type = "response")
+alc_simple$prob_high_use <- predicted_use
+alc_simple$predict_high_use <- (alc_simple$prob_high_use) > 0.5
+```
+
+#### Final model
+
+
+```{r fit-glm-2}
+alc_glm_second <- glm(
+  formula = high_use ~ goout + sex + absnt,
+  family = "binomial", 
+  data = alc)
+summary(alc_glm_second)
+```
+
+```{r regression-interpretation, echo = FALSE, evan = FALSE}
+# Using the variables which, according to your logistic regression model,
+# had a statistical relationship with high/low alcohol consumption, 
+# explore the predictive power of you model. 
+# 
+# Provide a 2x2 cross tabulation of predictions versus the actual values 
+# and optionally display a graphic visualizing both the actual values and
+# the predictions
+```
+
+```{r predict-using-model, echo = FALSE}
+predicted_use <- predict(alc_glm_second, type = "response")
+alc$prob_high_use <- predicted_use
+alc$predict_high_use <- (alc$prob_high_use) > 0.5
+```
+
+```{r predict-crosstable, echo = FALSE}
+
+crosstable <- table(high_use = alc$high_use, prediction = alc$prob_high_use > 0.5)
+
+knitr::kable(
+  crosstable,
+  col.names = c("predicted low","predicted high"),
+  caption = "Predicted vs. actual alcohol use (counts)"
+
+)
+```
+
+
+
+```{r actual_vs_predicted, echo = FALSE}
+prob_table <- table(
+    alcohol_use = alc$high_use, 
+    prediction = factor(
+      alc$predict_high_use,
+      labels = alc_labels)
+    ) %>%
+  prop.table() %>%
+  `*`(100) %>% 
+  round(1) %>%
+  addmargins()
+
+knitr::kable(
+   prob_table,
+  col.names = c("predicted low","predicted high","Sum"),
+  caption = "Predicted vs. actual alcohol use (%)"
+
+)
+```
+
+
+Crosstables indicate that model tends to overpredict the proportion of students who are low-drinkers (actual) and underpredict the proportion of high-drinking students.
+
+
+```{r odds_ratio_final, echo = FALSE, message = FALSE, eval = TRUE, warning = FALSE}
+model_summary <- apa_print(alc_glm_second)
+odds_ratio <- exp(coef(alc_glm_second))
+odds_df <- data.frame(tibble::rownames_to_column(as.data.frame(odds_ratio)))
+odds_df$rowname <- tolower(odds_df$rowname)
+odds_df[odds_df$rowname == "absnt>8",]$rowname <- "abseentism>8"
+names(odds_df) <- c("predictor","odds_ratio")
+odds_df$odds_ratio <- round(odds_df$odds_ratio, 2)
+model_summary_table <- data.frame(model_summary$table[c(4,5,6,10),])
+model_summary_table[model_summary_table$predictor == "Absnt>8",]$predictor <- "abseentism>8"
+model_summary_table$predictor <- tolower(model_summary_table$predictor)
+model_summary_table <- sjlabelled::remove_all_labels(model_summary_table)
+odds_df <- sjlabelled::remove_all_labels(odds_df)
+summary_col_names <- c("Predictor", "Estimate", "CI (95%)", "t", "p-value", "Odds ratio")
+knitr::kable(
+   model_summary_table %>% inner_join(odds_df), col.names = summary_col_names)
+
+```
+
+For the final model, the odds ratio of high alcohol use increasse 2.57 times when the student is male, 3.20 times when number of school absensces is higher than 8 (compared to zero to one absences), and 7.32-9.40 times when the student goes out with friends frequently or very frequently, compared to going out very little or no at all. 
+
+
+## Performance comparison
+
+```{r model-performance-comparison, echo = FALSE, eval = FALSE}
+
+# Compute the total proportion of inaccurately classified individuals
+# (= the training error) and comment on all the results. 
+# Compare the performance of the model with performance achieved by some simple guessing strategy. (0-3 points)
+
+```
+
+```{r training_error}
+loss_func <- function(class, prob) {
+  n_wrong <- abs(class - prob) > 0.5
+  mean(n_wrong)
+}
+
+training_error <- loss_func(class = alc$hu, prob = alc$predict_high_use)
+training_error_simple <- loss_func(class = alc_simple$hu, prob = alc_simple$predict_high_use)
+```
+The model has `r round(training_error,3)` training error. Error for initial model is 
+`r round(training_error_simple,3)` so it seems that keeping studytime predictor in the
+model would have been useful.
+
+
+
+
+```{r echo = FALSE, eval = FALSE}
+# Bonus: Perform 10-fold cross-validation on your model. 
+# Does your model have better test set performance (smaller prediction error using 10-fold cross-validation) compared to the model introduced in DataCamp (which had about 0.26 error). 
+# Could you find such a model? (0-2 points to compensate any loss 
+# of points from the above exercises)
+```
+
+
+```{r cross-validation}
+library(boot)
+cv <- cv.glm(data = alc, cost = loss_func, glmfit = alc_glm_second, K = 10)
+cv_simple <- cv.glm(data = alc_simple, cost = loss_func, glmfit = alc_glm_first, K = 10)
+```
+Based on the 10-fold cross-validation, the prediction error for the model is `r round(cv$delta[1],2)` so it seems that this model performs a bit better than the model introduced in the DataCamp which had 0.26 error. Surprisingly, prediction error for the initial model is `r round(cv_simple$delta[1],2)`, so it is the best model of all three. To conlude, this somewhat unexpected result idicates that it might be useful to keep also marginally signitficant predictors in the model, as was the case with studytime predictor.
+
+
+
+
