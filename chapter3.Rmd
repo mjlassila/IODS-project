@@ -17,9 +17,9 @@ library(papaja)
 select <- dplyr::select
 ```
 
-## Week 3 – Logistic regression
+# Week 3 – Logistic regression
 
-```{r load-data, echo = FALSE}
+```{r chapter3-load-data, echo = FALSE}
 
 # Print out the names of the variables in the data and describe the data set
 # briefly, assuming the reader has no previous knowledge of it. 
@@ -73,7 +73,7 @@ In addition, the following variables were created for the analysis
 
 
 
-```{r prepare-dataset, echo = FALSE, cache = FALSE}
+```{r chapter-3-prepare-dataset, echo = FALSE, cache = FALSE}
 categorical_columns <- c(
   "school",
   "sex",
@@ -399,5 +399,5 @@ cv_simple <- cv.glm(data = alc_simple, cost = loss_func, glmfit = alc_glm_first,
 Based on the 10-fold cross-validation, the prediction error for the model is `r round(cv$delta[1],2)` so it seems that this model performs a bit better than the model introduced in the DataCamp which had 0.26 error. Surprisingly, prediction error for the initial model is `r round(cv_simple$delta[1],2)`, so it is the best model of all three. To conlude, this somewhat unexpected result idicates that it might be useful to keep also marginally signitficant predictors in the model, as was the case with studytime predictor.
 
 
-
+## References
 
