@@ -26,11 +26,10 @@ select <- dplyr::select
 # There is information related to the data here. (0-1 point)
 
 alc <- fread(here("data/chapter3_alc.csv"))
-names(alc)
 # skim(alc)
 ```
 
-The original dataset `{r dim(alc)[1]`  has the following variables:
+Our goal if to predict the level of alcohol usage [based on data](https://archive.ics.uci.edu/ml/datasets/student+performance) collected using school reports and questionnaires  from two Portugese secondary-level schools. The original dataset (n=`r dim(alc)[1]`)  has the following variables:
 
 
 * school - student's school (binary: 'GP' - Gabriel Pereira or 'MS' - Mousinho da Silveira) 
@@ -71,6 +70,7 @@ In addition, the following variables were created for the analysis
 
 * alc_use - mean of workday and weekend alcohol consumption (numeric)
 * high_use - binary variable, TRUE if alc_use > 2
+
 
 
 ```{r prepare-dataset, echo = FALSE, cache = FALSE}
@@ -122,7 +122,7 @@ taumatrix <- GKtauDataframe(alc)
 
 Because there are as many as `r dim(alc)[2] ` variables in the dataset, choosing interesting and hopefully fruitful variables just by guessing is not likely to succeed. Therefore, let's use [Goodman-Kruskal tau](https://cran.r-project.org/web/packages/GoodmanKruskal/vignettes/GoodmanKruskal.html) to explore associations between variables in the dataset. 
 
-We have to use tau for this, instead of familiar Pearson correlation, as it doesn't give us useful results when variables are not not continuous. It should be noted, that even though many of the variables in the dataset are numerical (such as studytime, frequency of going out and amount of abseentism), in fact they are ordered categorical variables and therefore using tau to study association is sensible choice.
+We have to use tau for this, instead of familiar Pearson correlation, as it doesn't give us useful results when variables are not continuous. It should be noted, that even though many of the variables in the dataset are numerical (such as studytime, frequency of going out and amount of abseentism), according to the dataset description they are actually ordered categorical variables and therefore using tau to study association is sensible choice.
 
 ```{r tau-matrix, fig.width=16, fig.height=12, echo = FALSE, cache = TRUE}
 plot(taumatrix,colorPlot = FALSE,diagSize = 0.2)
@@ -225,7 +225,7 @@ Looking the plots it seems that our initial hypothesis was somewhat inaccurate. 
 # as the target variable. Present and interpret a summary of the fitted model.
 
 alc_glm_first <- glm(
-  formula = high_use ~ goout + sex + absnt + studytime - 1, # -1 => fit the model without intercept
+  formula = high_use ~ goout + sex + absnt + studytime,
   family = "binomial",                                     # 
   data = alc)
 summary(alc_glm_first)
@@ -240,19 +240,21 @@ For our initial variables, *frequency of going out with friends*, *gender*, *lev
 # Hint: If your model includes factor variables see for example the first answer of this stackexchange thread on how R treats and how you should interpret these variables in the model output (or use some other resource to study this). (0-5 points)
 ```
 
+Looking the odds ratios of the model, it can be stated that being male increases the odds of high alcohol usage over 2 times compared to females, going out frequently or very frequently increses the odds 8-10 times compared to the students who go out very little or not at all. High abseentism also increases the odds of high alcohol consumption 2.87 times compared to the studets who are not in the habit of abseentism.
+
+These model-based observations align pretty well on the conclusions which were made based on the initial visual exploration of the data.
 
 
-
-```{r odds_ratio_first, echo = FALSE, message = FALSE}
+```{r odds_ratio_first, echo = FALSE, message = FALSE, warning = FALSE}
 model_summary <- apa_print(alc_glm_first)
-odds_ratio <- exp(coef(alc_glm_first)[c(1,2,3,6,10,12)])
+odds_ratio <- exp(coef(alc_glm_first)[c(3,4,5,6,10,12)])
 odds_df <- data.frame(tibble::rownames_to_column(as.data.frame(odds_ratio)))
 odds_df$rowname <- tolower(odds_df$rowname)
-odds_df[odds_df$rowname == "absnt>8",]$rowname <- "abseentism"
+odds_df[odds_df$rowname == "absnt>8",]$rowname <- "abseentism>8"
 names(odds_df) <- c("predictor","odds_ratio")
 odds_df$odds_ratio <- round(odds_df$odds_ratio, 2)
-model_summary_table <- data.frame(model_summary$table[c(1,2,3,6,10,12),])
-model_summary_table[model_summary_table$predictor == "Absnt>8",]$predictor <- "abseentism"
+model_summary_table <- data.frame(model_summary$table[c(3,4,5,6,10,12),])
+model_summary_table[model_summary_table$predictor == "Absnt>8",]$predictor <- "abseentism>8"
 model_summary_table$predictor <- tolower(model_summary_table$predictor)
 model_summary_table <- sjlabelled::remove_all_labels(model_summary_table)
 odds_df <- sjlabelled::remove_all_labels(odds_df)
@@ -267,21 +269,13 @@ predicted_use <- predict(alc_glm_first, type = "response")
 alc_simple$prob_high_use <- predicted_use
 alc_simple$predict_high_use <- (alc_simple$prob_high_use) > 0.5
 ```
-goout1	-2.35
-goout2	-1.96
-goout3	-1.71
-sexm	0.77
-abseentism	1.05
-studytime 0.92
-
-
 
 #### Final model
 
 
 ```{r fit-glm-2}
 alc_glm_second <- glm(
-  formula = high_use ~ goout + sex + absnt - 1,
+  formula = high_use ~ goout + sex + absnt,
   family = "binomial", 
   data = alc)
 summary(alc_glm_second)
@@ -341,16 +335,16 @@ knitr::kable(
 Crosstables indicate that model tends to overpredict the proportion of students who are low-drinkers (actual) and underpredict the proportion of high-drinking students.
 
 
-```{r odds_ratio_final, echo = FALSE, message = FALSE, eval = TRUE}
+```{r odds_ratio_final, echo = FALSE, message = FALSE, eval = TRUE, warning = FALSE}
 model_summary <- apa_print(alc_glm_second)
-odds_ratio <- exp(coef(alc_glm_second)[c(1,2,3,6,10)])
+odds_ratio <- exp(coef(alc_glm_second))
 odds_df <- data.frame(tibble::rownames_to_column(as.data.frame(odds_ratio)))
-odds_df[odds_df$rowname == "absnt>8",]$rowname <- "abseentism"
 odds_df$rowname <- tolower(odds_df$rowname)
+odds_df[odds_df$rowname == "absnt>8",]$rowname <- "abseentism>8"
 names(odds_df) <- c("predictor","odds_ratio")
 odds_df$odds_ratio <- round(odds_df$odds_ratio, 2)
-model_summary_table <- data.frame(model_summary$table[c(1,2,3,6,10),])
-model_summary_table[model_summary_table$predictor == "Absnt>8",]$predictor <- "abseentism"
+model_summary_table <- data.frame(model_summary$table[c(4,5,6,10),])
+model_summary_table[model_summary_table$predictor == "Absnt>8",]$predictor <- "abseentism>8"
 model_summary_table$predictor <- tolower(model_summary_table$predictor)
 model_summary_table <- sjlabelled::remove_all_labels(model_summary_table)
 odds_df <- sjlabelled::remove_all_labels(odds_df)
@@ -359,6 +353,8 @@ knitr::kable(
    model_summary_table %>% inner_join(odds_df), col.names = summary_col_names)
 
 ```
+
+For the final model, the odds ratio of high alcohol use increasse 2.57 times when the student is male, 3.20 times when number of school absensces is higher than 8 (compared to zero to one absences), and 7.32-9.40 times when the student goes out with friends frequently or very frequently, compared to going out very little or no at all. 
 
 
 ## Performance comparison
