@@ -1,0 +1,124 @@
+```{r chapter-4-setup, cache = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
+library(PerformanceAnalytics)
+library(data.table)
+library(tidyverse)
+library(hrbrthemes)
+library(ggcorrplot)
+library(GoodmanKruskal)
+library(lindia)
+library(finalfit)
+library(sigr)
+library(papaja)
+library(here)
+library(kableExtra)
+library(GGally)
+```
+
+# Week 4 – Clustering
+
+```{r chapter-4-load-data, echo = FALSE, message= FALSE, cache = TRUE}
+
+learning2014 <- fread(here("data/learning2014.csv"))
+
+```
+
+```{r, eval = FALSE, echo = FALSE}
+# Load the Boston data from the MASS package. Explore the structure and 
+# the dimensions of the data and describe the dataset briefly, assuming 
+# the reader has no previous knowledge of it. Details about the Boston dataset 
+# can be seen for example here. (0-1 points)
+```
+
+
+```{r, eval = FALSE, echo = FALSE}
+# Show a graphical overview of the data and show summaries of the variables 
+# in the data. Describe and interpret the outputs, commenting on the 
+# distributions of the variables and the relationships between them. (0-2 points)
+```
+
+
+
+
+```{r, eval = FALSE, echo = FALSE}
+# Standardize the dataset and print out summaries of the scaled data. How did
+# the variables change? 
+
+# Create a categorical variable of the crime rate in the
+# Boston dataset (from the scaled crime rate). Use the quantiles as the break
+# points in the categorical variable. Drop the old crime rate variable from the
+# dataset. Divide the dataset to train and test sets, so that 80% of the data
+# belongs to the train set. (0-2 points)
+```
+
+
+
+
+```{r, eval = FALSE, echo = FALSE}
+# Fit the linear discriminant analysis on the train set. Use the categorical
+# crime rate as the target variable and all the other variables in the dataset
+# as predictor variables. Draw the LDA (bi)plot. (0-3 points)
+```
+
+```{r, eval = FALSE, echo = FALSE}
+# Save the crime categories from the test set and then remove the categorical
+# crime variable from the test dataset. Then predict the classes with the LDA
+# model on the test data. Cross tabulate the results with the crime categories
+# from the test set. Comment on the results. (0-3 points)
+```
+
+```{r, eval = FALSE, echo = FALSE}
+# Reload the Boston dataset and standardize the dataset (we did not do this in
+# the Datacamp exercises, but you should scale the variables to get comparable
+# distances). Calculate the distances between the observations. Run k-means
+# algorithm on the dataset. Investigate what is the optimal number of clusters
+# and run the algorithm again. Visualize the clusters (for example with the
+# pairs() or ggpairs() functions, where the clusters are separated with colors)
+# and interpret the results. (0-4 points)
+```
+
+```{r, eval = FALSE, echo = FALSE}
+# Bonus: Perform k-means on the original Boston data with some reasonable number
+# of clusters (> 2). Remember to standardize the dataset. Then perform LDA using
+# the clusters as target classes. Include all the variables in the Boston data
+# in the LDA model. Visualize the results with a biplot (include arrows
+# representing the relationships of the original variables to the LDA solution).
+# Interpret the results. Which variables are the most influencial linear
+# separators for the clusters? (0-2 points to compensate any loss of points from
+# the above exercises)
+```
+
+```{r, eval = FALSE, echo = FALSE}
+# Super-Bonus: Run the code below for the (scaled) train data that you used to
+# fit the LDA. The code creates a matrix product, which is a projection of the
+# data points.
+```
+
+```{r, eval = FALSE, echo = FALSE}
+model_predictors <- dplyr::select(train, -crime)
+# check the dimensions
+dim(model_predictors)
+dim(lda.fit$scaling)
+# matrix multiplication
+matrix_product <- as.matrix(model_predictors) %*% lda.fit$scaling
+matrix_product <- as.data.frame(matrix_product)
+```
+
+```{r, eval = FALSE, echo = FALSE}
+# Next, install and access the plotly package. Create a 3D plot (Cool!) of the
+# columns of the matrix product by typing the code below.
+```
+
+```{r, eval = FALSE, echo = FALSE}
+plot_ly(x = matrix_product$LD1, y = matrix_product$LD2, z = matrix_product$LD3, type= 'scatter3d', mode='markers')
+```
+
+```{r, eval = FALSE, echo = FALSE}
+# Adjust the code: add argument color as a argument in the plot_ly() function.
+# Set the color to be the crime classes of the train set. Draw another 3D plot
+# where the color is defined by the clusters of the k-means. How do the plots
+# differ? Are there any similarities? (0-3 points to compensate any loss of
+# points from the above exercises)
+```
+
+## References
+
