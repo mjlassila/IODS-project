@@ -12,28 +12,34 @@ library(papaja)
 library(here)
 library(kableExtra)
 library(GGally)
+library(MASS)
 ```
 
 # Week 4 – Clustering
 
-```{r chapter-4-load-data, echo = FALSE, message= FALSE, cache = TRUE}
-
-learning2014 <- fread(here("data/learning2014.csv"))
-
+```{r chapter4-load, echo = FALSE}
+boston <- Boston
 ```
 
-```{r, eval = FALSE, echo = FALSE}
+
+
+```{r, eval = TRUE, echo = FALSE}
 # Load the Boston data from the MASS package. Explore the structure and 
 # the dimensions of the data and describe the dataset briefly, assuming 
 # the reader has no previous knowledge of it. Details about the Boston dataset 
 # can be seen for example here. (0-1 points)
+
+
+skimr::skim(boston)
+
 ```
 
 
-```{r, eval = FALSE, echo = FALSE}
+```{r, eval = TRUE, echo = FALSE, cache = TRUE}
 # Show a graphical overview of the data and show summaries of the variables 
 # in the data. Describe and interpret the outputs, commenting on the 
 # distributions of the variables and the relationships between them. (0-2 points)
+GGally::ggpairs(boston)
 ```
 
 
@@ -42,7 +48,9 @@ learning2014 <- fread(here("data/learning2014.csv"))
 ```{r, eval = FALSE, echo = FALSE}
 # Standardize the dataset and print out summaries of the scaled data. How did
 # the variables change? 
+```
 
+```{r, eval = FALSE, echo = FALSE}
 # Create a categorical variable of the crime rate in the
 # Boston dataset (from the scaled crime rate). Use the quantiles as the break
 # points in the categorical variable. Drop the old crime rate variable from the
