@@ -296,9 +296,6 @@ caption = "Affulent and less affulent neighbourhoods of Boston metropolitan area
 ```
 
 
-
-We can see from the graph what we earlier saw numerically from the datatable. In the upper row we have crime against the variables, and we can see that cluster #2 has higher crime rates in every aspect than cluster #1.
-
 ```{r, eval = FALSE, echo = FALSE}
 # Bonus: Perform k-means on the original Boston data with some reasonable number
 # of clusters (> 2). Remember to standardize the dataset. Then perform LDA using
