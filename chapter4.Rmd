@@ -51,7 +51,7 @@ skimr::skim(boston)
 
 The dataset has 506 observations and 14 variables. My guess is that observations correspond to cencus districts, eg. subportions of town, as it is very unlikely that Boston metropolitan has over 500 towns.
   
-  Code   Description
+   Code  Description
   -----  ------------------------------
    crim  per capita crime rate by town.
      zn  proportion of residential land zoned for lots over 25,000 sq.ft.
@@ -64,7 +64,7 @@ The dataset has 506 observations and 14 variables. My guess is that observations
     rad  index of accessibility to radial highways.
     tax  full-value property-tax rate per \$10,000.
 ptratio  pupil-teacher ratio by town.
-  black  1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town. (eg lower the number, bigger the african american population)
+  black  1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
   lstat  lower status of the population (percent).
    medv  median value of owner-occupied homes in \$1000s.
 
