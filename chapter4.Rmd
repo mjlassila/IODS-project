@@ -49,7 +49,7 @@ skimr::skim(boston)
 
 ```
 
-The dataset has 506 observations and 14 variables. My guess is that observations correspond to cescus districts, eg. subportions of town, as it is very unlikely that Boston metropolitan has over 500 towns.
+The dataset has 506 observations and 14 variables. My guess is that observations correspond to cencus districts, eg. subportions of town, as it is very unlikely that Boston metropolitan has over 500 towns.
   
   Code   Description
   -----  ------------------------------
@@ -105,6 +105,7 @@ corrplot(
 )
 ```
 
+Let's have a closer look of variables which have higehst correlation with criminality.
 
 
 ```{r, eval = TRUE, echo = FALSE, fig.width=11, fig.height=10}
@@ -123,7 +124,7 @@ GGally::ggpairs(boston, columns = c(
 )
 ```
 
-Looking the data my intuition is that low-status housing near highways and industrial areas are more prone to have higher crime rate.
+Looking the data my intuition is that low-status (likely working-class) housing near highways and industrial areas are more prone to have a higher crime rate.
 
 
 
