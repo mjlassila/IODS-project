@@ -12,10 +12,25 @@ library(papaja)
 library(here)
 library(kableExtra)
 library(GGally)
+library(gtools)
 library(MASS)
+library(corrplot)
+library(magrittr)
+library(caret)
+library(factoextra)
+library(broom)
+library(ggord)
+# For overriding MASS select() 
+select <- dplyr::select
+set.seed(2018)
 ```
 
 # Week 4 – Clustering
+
+Our goal for the fourth week is to explore census data collected in 1970 from the Boston metropolitan area. Our first step is to try to predicting the crime rate in the Boston area using plethora of predictor variables. Finally we'll see what kind of clusters we can find from the dataset when running *k-means* clustering algorithm over the data.
+
+The dataset is discussed more deeply in Harrison, D. and Rubinfeld, D.L. (1978) Hedonic prices and the demand for clean air. *Journal of Environmental Economics and Management* 5, 81–102 ([PDF](https://www.researchgate.net/publication/238676322_Hedonic_prices_and_the_demand_for_clean_air)) 
+
 
 ```{r chapter4-load, echo = FALSE}
 boston <- Boston
@@ -34,47 +49,178 @@ skimr::skim(boston)
 
 ```
 
+The dataset has 506 observations and 14 variables. My guess is that observations correspond to cescus districts, eg. subportions of town, as it is very unlikely that Boston metropolitan has over 500 towns.
+  
+  Code   Description
+  -----  ------------------------------
+   crim  per capita crime rate by town.
+     zn  proportion of residential land zoned for lots over 25,000 sq.ft.
+  indus  proportion of non-retail business acres per town.
+   chas  Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+    nox  nitrogen oxides concentration (parts per 10 million).
+     rm  average number of rooms per dwelling.
+    age  proportion of owner-occupied units built prior to 1940.
+    dis  weighted mean of distances to five Boston employment centres.
+    rad  index of accessibility to radial highways.
+    tax  full-value property-tax rate per \$10,000.
+ptratio  pupil-teacher ratio by town.
+  black  1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town. (eg lower the number, bigger the african american population)
+  lstat  lower status of the population (percent).
+   medv  median value of owner-occupied homes in \$1000s.
 
-```{r, eval = TRUE, echo = FALSE, cache = TRUE}
+Renaming variables makes it easier in later steps to discuss our findings.
+
+```{r column_names}
+
+boston_column_names <- c(
+  'per_capita_crime',
+  'proportion_big_lots',
+  'proportion_industry',
+  'river_near',
+  'nox_concentration',
+  'rooms_per_dwelling',
+  'proportion_old_houses',
+  'mean_distance_to_centers',
+  'highway_access',
+  'tax_value',
+  'pupil_teacher_ratio',
+  'proportion_blacks',
+  'lower_status',
+  'house_median_value'
+)
+
+names(boston) <- boston_column_names
+
+```
+
+
+## Exploring the data
+
+
+```{r corrplot, eval = TRUE, echo = FALSE, fig.width = 9, fig.height = 9}
+
+corrplot(
+  cor(boston),
+  method = "number"
+)
+```
+
+
+
+```{r, eval = TRUE, echo = FALSE, fig.width=11, fig.height=10}
 # Show a graphical overview of the data and show summaries of the variables 
 # in the data. Describe and interpret the outputs, commenting on the 
 # distributions of the variables and the relationships between them. (0-2 points)
-GGally::ggpairs(boston)
+GGally::ggpairs(boston, columns = c(
+  "proportion_industry",
+  "per_capita_crime",
+  "nox_concentration",
+  "proportion_old_houses",
+  "highway_access",
+  "tax_value",
+  "lower_status"
+  )
+)
 ```
 
+Looking the data my intuition is that low-status housing near highways and industrial areas are more prone to have higher crime rate.
 
 
 
-```{r, eval = FALSE, echo = FALSE}
+
+```{r, eval = TRUE, echo = FALSE}
 # Standardize the dataset and print out summaries of the scaled data. How did
-# the variables change? 
+# the variables change?
+
+boston_scaled <- boston %>% scale %>% as.data.frame
+
+# Variables are now
 ```
 
-```{r, eval = FALSE, echo = FALSE}
+```{r, eval = TRUE, echo = TRUE}
 # Create a categorical variable of the crime rate in the
 # Boston dataset (from the scaled crime rate). Use the quantiles as the break
 # points in the categorical variable. Drop the old crime rate variable from the
 # dataset. Divide the dataset to train and test sets, so that 80% of the data
 # belongs to the train set. (0-2 points)
+
+boston_scaled %<>% 
+    mutate(
+      crime_cat = quantcut(
+        per_capita_crime, 
+        labels = c("very low","low","high","very high")
+        )
+      ) %>% select(-per_capita_crime)
+
+
+# Let's use  Caret to create training dataset and make sure that
+# the overall class distribution is preserved
+# eg. the random sampling occurs within each class
+
+rows_to_train <- caret::createDataPartition(boston_scaled$crime_cat, p = .8, 
+                                  list = FALSE, 
+                                  times = 1)
+
+boston_training <- boston_scaled[rows_to_train,]
+boston_test <- boston_scaled[-rows_to_train,]
+
 ```
 
 
+## Linear discriminant analysis and prediction
 
-
-```{r, eval = FALSE, echo = FALSE}
+```{r, eval = TRUE, echo = TRUE, cache = FALSE, echo = FALSE}
 # Fit the linear discriminant analysis on the train set. Use the categorical
 # crime rate as the target variable and all the other variables in the dataset
 # as predictor variables. Draw the LDA (bi)plot. (0-3 points)
+
+fitControl <- trainControl(## 10-fold CV
+                           method = "repeatedcv",
+                           number = 10,
+                           repeats = 10)
+
+boston_lda <- train(crime_cat ~ ., data = boston_training, 
+                 method = "lda",
+                 trControl = fitControl,
+                 verbose = FALSE)
+
+
+ord <- lda(crime_cat ~ ., boston_training)
+
+
+ggord(ord, 
+      grp_in = boston_training$crime_cat,
+      size = boston_training$lower_status, sizelab = 'Low status', alpha = 0.5) + theme_ipsum()
+
 ```
 
-```{r, eval = FALSE, echo = FALSE}
+The model predicts the correct class with `r 100 * round(boston_lda$results$Accuracy,2)` % accuracy.
+Location near to highway entraces seems to contribute most to the criminality.
+
+```{r, eval = TRUE, echo = FALSE}
 # Save the crime categories from the test set and then remove the categorical
 # crime variable from the test dataset. Then predict the classes with the LDA
 # model on the test data. Cross tabulate the results with the crime categories
 # from the test set. Comment on the results. (0-3 points)
+
+crime_classes <- boston_test$crime_cat
+
+boston_test %<>% select(-crime_cat)
+
+predict_boston <- predict(boston_lda, boston_test)
+crosstable <- table(actual = crime_classes, predicted = predict_boston)
+knitr::kable(
+  crosstable,
+  col.names = c("very low","low", "high", "very high"),
+  caption = "Predicted (cols) vs. actual (rows) crime rate in Boston"
+
+)
 ```
 
-```{r, eval = FALSE, echo = FALSE}
+
+## K-means clustering
+
+```{r, eval = TRUE, echo = FALSE, cache = FALSE}
 # Reload the Boston dataset and standardize the dataset (we did not do this in
 # the Datacamp exercises, but you should scale the variables to get comparable
 # distances). Calculate the distances between the observations. Run k-means
@@ -82,7 +228,76 @@ GGally::ggpairs(boston)
 # and run the algorithm again. Visualize the clusters (for example with the
 # pairs() or ggpairs() functions, where the clusters are separated with colors)
 # and interpret the results. (0-4 points)
+
+
+# Cluster exploration from
+# https://cran.r-project.org/web/packages/broom/vignettes/kmeans.html
+
+
+boston_scaled <- boston %>% scale %>% as.data.frame
+
+
+kclusts <- tibble(k = 1:9) %>%
+  mutate(
+    kclust = map(k, ~kmeans(boston_scaled, .x)),
+    tidied = map(kclust, tidy),
+    glanced = map(kclust, glance),
+    augmented = map(kclust, augment, boston_scaled)
+  )
+
+clusterings <- kclusts %>%
+  unnest(glanced, .drop = TRUE)
+
+
+ggplot(clusterings, aes(k, tot.withinss)) +
+  geom_line() +
+  theme_ipsum()
+
+
 ```
+
+Plot represents the variance within the clusters. It decreases as k increases, but one can notice a bend (or “elbow”) at ~2. This bend indicates that additional clusters beyond this point have only little value. So, let's fit k-means clustering with k=2.
+
+
+```{r final-clustering, echo = FALSE, cache = FALSE}
+boston_scaled <- boston %>% scale %>% as.data.frame
+kclust <- kmeans(boston_scaled, centers = 2)
+boston_scaled <- augment(kclust, boston_scaled)
+boston_scaled %<>% mutate(cluster = .cluster)
+```
+
+```{r visualize-clusters, echo = FALSE, cache = FALSE, fig.width=11, fig.height=9}
+
+pairs(boston_scaled %>% select(-cluster, -.cluster), col = boston_scaled$cluster,cex = 0.7, pch = 16)
+
+```
+
+Looking the plots, our two clusters correspond pretty nicely to our intuition of crime-prone neighbourhoods residing near high-pollution industrial areas and highways. More affluent cluster 1 (colour black) has less criminality. Cluster 2 has more pollution, is located near to highways, has factories nearby and has more criminality. 
+
+```{r compare_clusters, echo= FALSE}
+columns_to_select <- c(
+  "proportion_industry",
+  "per_capita_crime",
+  "nox_concentration",
+  "proportion_old_houses",
+  "highway_access",
+  "tax_value",
+  "lower_status"
+  )
+
+ 
+knitr::kable(
+boston_scaled %>% 
+  select(columns_to_select,cluster) %>% 
+  group_by(cluster) %>%
+  summarise_all(mean),
+caption = "Affulent and less affulent neighbourhoods of Boston metropolitan area"
+)
+```
+
+
+
+We can see from the graph what we earlier saw numerically from the datatable. In the upper row we have crime against the variables, and we can see that cluster #2 has higher crime rates in every aspect than cluster #1.
 
 ```{r, eval = FALSE, echo = FALSE}
 # Bonus: Perform k-means on the original Boston data with some reasonable number
