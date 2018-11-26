@@ -170,7 +170,7 @@ boston_test <- boston_scaled[-rows_to_train,]
 
 ## Linear discriminant analysis and prediction
 
-```{r, eval = TRUE, echo = TRUE, cache = FALSE, echo = FALSE, fig.width=8, fig.height=8}
+```{r, eval = TRUE, echo = TRUE, cache = FALSE, echo = FALSE, fig.width=8, fig.height=6}
 # Fit the linear discriminant analysis on the train set. Use the categorical
 # crime rate as the target variable and all the other variables in the dataset
 # as predictor variables. Draw the LDA (bi)plot. (0-3 points)
