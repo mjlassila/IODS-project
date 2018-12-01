@@ -1,0 +1,237 @@
+```{r chapter-4-setup, cache = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
+
+library(data.table)
+library(tidyverse)
+library(hrbrthemes)
+library(ggcorrplot)
+library(GoodmanKruskal)
+library(lindia)
+library(finalfit)
+library(sigr)
+library(papaja)
+library(here)
+library(kableExtra)
+library(GGally)
+library(gtools)
+library(MASS)
+library(corrplot)
+library(magrittr)
+library(caret)
+library(factoextra)
+library(broom)
+library(ggord)
+library(skimr)
+library(sjstats)
+# For overriding MASS select() 
+select <- dplyr::select
+set.seed(2018)
+```
+
+
+# Week 4 – Dimensionality reduction
+
+
+## Exploring human development data with principal component analysis
+
+```{r chapter-5-load-data, echo = FALSE, message = FALSE, cache = TRUE}
+human <- read.csv(here("data/human.csv"), row.names = 1)
+```
+
+
+```{r eval = FALSE, echo = FALSE}
+# Show a graphical overview of the data and show summaries of the variables in
+# the data. Describe and interpret the outputs, commenting on the distributions
+# of the variables and the relationships between them. (0-2 points)
+```
+
+```{r graphical-overview, fig.width = 9, fig.height = 9, echo = FALSE, cache = TRUE}
+GGally::ggpairs(human)
+```
+
+Gross National Income is highly skewed variable because there are six outliers 
+
+```{r human-corrplot, eval = TRUE, echo = FALSE, fig.width = 9, fig.height = 9}
+
+corrplot(
+  cor(human),
+  method = "number"
+)
+```
+
+Unexpectedly, maternal mortality and life expectency are highly correlated (-0.86) as well as high birth rate and maternal mortality (0.76). Variables regarding education have also strong correlation with maternal mortality, so that higher values in education variables, lead to lower value in maternal mortality rate. Secondary education of women have an association to lower birth rate (-0.68), as well as higher life expectancy (-0.72). Rather surprisingly, women's representation in the parliament doesn't seem to have an association with any of variables or the association is very low. As one might expect, maternal mortality and high birth rate are associated with low GNI.
+
+```{r eval = FALSE, echo = FALSE}
+# Perform principal component analysis (PCA) on the not standardized human data.
+# Show the variability captured by the principal components. Draw a biplot
+# displaying the observations by the first two principal components (PC1
+# coordinate in x-axis, PC2 coordinate in y-axis), along with arrows
+# representing the original variables. (0-2 points)
+```
+
+```{r pca-incorrectly}
+pca_human <- prcomp(human)
+pca_summary <- pca(pca_human)
+```
+
+```{r, echo = FALSE}
+knitr::kable(
+round(pca_summary,1),
+caption = "Principal component analysis of non-standardized data"
+)
+```
+
+```{r, echo = FALSE, fig.width=4, fig.height=1}
+ggord(pca_human, arrow = 0.4, txt = 5, vec_ext = 4, size = 0.06) + theme_minimal()
+```
+
+
+```{r eval = FALSE, echo = FALSE}
+# Standardize the variables in the human data and repeat the above analysis.
+# Interpret the results of both analysis (with and without standardizing). Are
+# the results different? Why or why not? Include captions (brief descriptions)
+# in your plots where you describe the results by using not just your variable
+# names, but the actual phenomenons they relate to. (0-4 points)
+```
+
+```{r pca-done-right}
+pca_human_final <- prcomp(human, scale = TRUE, center = TRUE)
+pca_summary_final <- pca(pca_human_final)
+```
+
+
+```{r, echo = FALSE}
+knitr::kable(
+round(pca_summary_final,2),
+caption = "Principal component analysis of standardized data"
+)
+```
+
+
+```{r, echo = FALSE, fig.width=10, fig.height=9, cache = FALSE}
+ggord(
+  pca_human_final,
+  arrow = 0.4,
+  txt = 3,
+  vec_ext = 4.5,
+  size = 2,
+  obslab = TRUE,
+  repel = TRUE,
+  labcol = "red") + theme_minimal()
+```
+
+```{r eval = FALSE, echo = FALSE}
+# Give your personal interpretations of the first two principal component
+# dimensions based on the biplot drawn after PCA on the standardized human data.
+# (0-2 points)
+```
+
+
+```{r eval = FALSE, echo = FALSE}
+# Give your personal interpretations of the first two principal component
+# dimensions based on the biplot drawn after PCA on the standardized human data.
+# (0-2 points)
+
+```
+
+
+## Exploring tea survey data with multiple correspondence analysis
+
+```{r eval = FALSE, echo = FALSE}
+# Load the tea dataset from the package Factominer. Explore the data briefly:
+# look at the structure and the dimensions of the data and visualize it.
+
+```
+```{r, echo = FALSE}
+library(FactoMineR)
+data(tea)
+```
+
+
+
+Questions from From Exploratory Multivariate Analysis by Example Using R, Second Edition, 131-132
+
+1. What kind of tea do you drink the most (black tea, green, tea, flavored tea)
+2. How do you take your tea (nothing added, with lemon, with milk, other)
+3. What kind of tea you buy ? (tea bags, loose tea, both)
+4. Do you add sugar to your tea (yes, no)?
+5. Where do you buy your tea (supermarket, specialist shop, both)
+6. What kind of tea you buy (cheapest supermarket brand, well-known brand, luxury, it varies)
+7. How ofter do you drink tea (more than twice a day, once a day, 3 to 6 times a week, once or twice per week)?
+
+Location in wich the tea is drunk (yes/no):
+
+8. Do you drink tea at home?
+9 Do you drink tea at work?
+10. Do you drink tea in tearooms or coffee shops?
+11. Do you drink tea at frinds houses?
+12. Do you drink tea in restaurants?
+13. Do you drink tea in bars?
+
+Time of the day (yes/no): 
+
+14. Do you drink tea at breakfast?
+15. Do you drink tea in the afternoon?
+16. Do you drink tea in the evening?
+17. Do you drink tea after lunch?
+18. Do you drink tea after dinner?
+19. Do you drink tea throughout the day?
+
+Questions about the image of the product (yes/no): 
+20 Do you consider tea to be exotic?
+21. Do you associate tea with spirituality?
+22. Is tea good for your health?
+23. Is tea a diuretic?
+24. Do you associate tea with friendliness?
+25. Does tea stop the body from absorbing iron?
+26. Is tea feminine?
+28. Is tea refined?
+29. Will tea help you to lose weight?
+30. Is tea a stimulant?
+31. Is tea a relaxant?
+32. Does tea have any effect on your overall health?”
+
+Additionally, there were four background questions: 
+sex, professional category (farmer, manual labourer, professional, senior management, employee, other profession, student, unemployed), age, and whether or not the participant regularly played sports (yes or no).
+
+```{r variable-overview, results='asis'}
+skim(tea) %>% skimr::kable()
+```
+
+
+```{r, eval = FALSE, echo = FALSE}
+# Then do Multiple Correspondence Analysis on the tea data (or to a certain
+# columns of the data, it’s up to you). Interpret the results of the MCA and
+# draw at least the variable biplot of the analysis.
+```
+```{r mca-with-factominer}
+tea_mca <- MCA(tea,
+    quanti.sup = 19, # age as quantitative supplement
+    quali.sup = c(20:36)) # other background variables as categorical 
+                                # supplements
+```
+
+
+
+```{r variable-biplot, fig.width=10, fig.height=9}
+ggord(tea_mca,
+      tea$Tea,
+      arrow = 0.4,
+      txt = 5,
+      vec_ext = 1.1,
+      size = 2,
+      repel = TRUE) + theme_minimal()
+```
+
+
+
+
+
+```{r, eval = FALSE, echo = FALSE}
+# You can also explore other plotting options for MCA. Comment on the output of
+# the plots. (0-4 points)
+```
+
+
+
+
+
