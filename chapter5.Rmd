@@ -22,6 +22,7 @@ library(broom)
 library(ggord)
 library(skimr)
 library(sjstats)
+library(explor)
 # For overriding MASS select() 
 select <- dplyr::select
 set.seed(2018)
@@ -206,7 +207,8 @@ skim(tea) %>% skimr::kable()
 ```{r mca-with-factominer}
 tea_mca <- MCA(tea,
     quanti.sup = 19, # age as quantitative supplement
-    quali.sup = c(20:36)) # other background variables as categorical 
+    quali.sup = c(20:36),
+    graph = FALSE) # other background variables as categorical 
                                 # supplements
 ```
 
@@ -230,6 +232,22 @@ ggord(tea_mca,
 # You can also explore other plotting options for MCA. Comment on the output of
 # the plots. (0-4 points)
 ```
+
+```{r contributions-plot, eval = TRUE, echo = FALSE }
+res <- explor::prepare_results(tea_mca)
+explor::MCA_ind_plot(res, xax = 1, yax = 2,ind_sup = FALSE,
+    lab_var = NULL, , ind_lab_min_contrib = 0,
+    col_var = NULL, labels_size = 9,
+    point_opacity = 0.5, opacity_var = "Contrib", point_size = 54,
+    ellipses = FALSE, transitions = TRUE, labels_positions = NULL,
+    xlim = c(-1, 1.44), ylim = c(-1.06, 1.38))
+```
+
+```{r eigvenvalues, cache = TRUE, eval = TRUE, echo = FALSE}
+fviz_eig(tea_mca, choice = "eigenvalue", geom = "bar")
+```
+
+
 
 
 
