@@ -201,7 +201,7 @@ skim(human)
 # (Using string manipulation. Note that the mutation of 'human' was not done on
 # DataCamp). (1 point)
 
-human %<>% mutate(gni = as.numeric(stringr::str_replace(gni,',','.')))
+human %<>% mutate(gni = as.numeric(stringr::str_replace(gni,',','')))
 
 # Exclude unneeded variables: keep only the columns matching the following
 # variable names (described in the meta file above):  "Country", "Edu2.FM",
