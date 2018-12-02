@@ -65,13 +65,13 @@ human <- read.csv(here("data/human.csv"), row.names = 1)
 # of the variables and the relationships between them. (0-2 points)
 ```
 
-```{r graphical-overview, fig.width = 9, fig.height = 9, echo = FALSE, cache = TRUE}
+```{r chapter-5-graphical-overview, fig.width = 9, fig.height = 9, echo = FALSE, cache = TRUE}
 GGally::ggpairs(human)
 ```
 
 Most of the variable distributions are more-or-less skewed, so it is very likely that PCA will not work without normalizing the data. Only the edu_exp (expected years of education) variable looks normally distributed. 
 
-```{r summary-table, echo = FALSE, results = "asis" }
+```{r chapter-5-summary-table, echo = FALSE, results = "asis" }
 stargazer(
     human, 
     type = "html", 
@@ -255,7 +255,7 @@ Let's use [Goodman-Kruskal tau](https://cran.r-project.org/web/packages/GoodmanK
 
 
 
-```{r tau-matrix, fig.width=17, fig.height=14, echo = FALSE, cache = TRUE}
+```{r chapter-5-tau-matrix, fig.width=17, fig.height=14, echo = FALSE, cache = TRUE}
 plot(taumatrix,colorPlot = FALSE,diagSize = 0.15)
 ```
 
@@ -273,7 +273,7 @@ Going trough the Goodman-Kruskal tau-matrix, we can observe few interesting asso
 
 Even though we'll eventually use all variables in the MCA, let's observe few of these associations bit more closely, just for the sake of curiosity.
 
-```{r pair-comparison, cache = FALSE, echo = FALSE, fig.width=13, fig.height=13}
+```{r chapter-5-tea-pair-comparison, cache = FALSE, echo = FALSE, fig.width=13, fig.height=13}
 ggpairs(tea %>% 
   select(sex,age_Q,feminine,Tea,where,price))
 ```
