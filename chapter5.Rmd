@@ -1,4 +1,4 @@
-```{r chapter-4-setup, cache = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
+```{r chapter-5-setup, cache = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
 
 library(data.table)
 library(tidyverse)
@@ -30,12 +30,29 @@ set.seed(2018)
 ```
 
 
-# Week 4 – Dimensionality reduction techniques
+# Week 5 – Dimensionality reduction techniques
 
+This week we'll try out dimensionality reduction techniques, namely principal components analysis (PCA) and multiple correspondence analysis (MCA) which can be used to explore multidimensional data as points in a low-dimensional space. PCA is applicable for continous data and MCA can be used when the measurement level of variables is at least categorical.
 
 ## Exploring human development data with principal component analysis
 
-The 'human' dataset originates from the United Nations Development Programme.
+The dataset we'll use is  from the United Nations Development Programme. For the following analysis, the dataset was preprocessed using an [external script](https://github.com/mjlassila/IODS-project/blob/mjlassila/chapter-5/data/create_human.R).
+
+The dataset has the following variables:
+
+   Code                Description
+  -----------------   ------------------------------
+   country            name of the country (as row name)
+   edu_exp            expected years of education
+   sec_edu_female     proportion of females at least 2nd level education
+   labour_rate_female proportion of women participating in working life
+   life_exp           life expectancy at birth
+   gni                gross national income
+   mat_mortality      maternal mortality ratio
+   birth_rate         the number of births to women ages 15–19 (per 1000 women)
+   repr_parlament     percetange of female members of the parliament
+
+
 
 ```{r chapter-5-load-data, echo = FALSE, message = FALSE, cache = TRUE}
 human <- read.csv(here("data/human.csv"), row.names = 1)
@@ -52,7 +69,7 @@ human <- read.csv(here("data/human.csv"), row.names = 1)
 GGally::ggpairs(human)
 ```
 
-Gross National Income is highly skewed variable because there are six outliers 
+Most of the variable distributions are more-or-less skewed, so it is very likely that PCA will not work without normalizing the data. Only the edu_exp (expected years of education) variable looks normally distributed. 
 
 ```{r summary-table, echo = FALSE, results = "asis" }
 stargazer(
@@ -67,7 +84,6 @@ stargazer(
 
 
 
-
 ```{r human-corrplot, eval = TRUE, echo = FALSE, fig.width = 9, fig.height = 9}
 
 corrplot(
@@ -76,7 +92,7 @@ corrplot(
 )
 ```
 
-Unexpectedly, maternal mortality and life expectency are highly correlated (-0.86) as well as high birth rate and maternal mortality (0.76). Variables regarding education have also strong correlation with maternal mortality, so that higher values in education variables, lead to lower value in maternal mortality rate. Secondary education of women have an association to lower birth rate (-0.68), as well as higher life expectancy (-0.72). Rather surprisingly, women's representation in the parliament doesn't seem to have an association with any of other variables or the association is very low. As one might expect, maternal mortality and high birth rate are associated with low GNI.
+Unexpectedly, maternal mortality and life expectency are highly correlated (-0.86) as well as high birth rate and maternal mortality (0.76). Variables regarding education have also strong correlation with maternal mortality, so that higher values in education variables, lead to lower value in maternal mortality rate. Secondary education of women have an association to lower birth rate (-0.68), as well as higher life expectancy (-0.72). Quite surprisingly, women's representation in the parliament doesn't seem to have an association with any of other variables or the association is very low. As one might expect, maternal mortality and high birth rate are associated with low GNI.
 
 ```{r eval = FALSE, echo = FALSE}
 # Perform principal component analysis (PCA) on the not standardized human data.
@@ -85,6 +101,8 @@ Unexpectedly, maternal mortality and life expectency are highly correlated (-0.8
 # coordinate in x-axis, PC2 coordinate in y-axis), along with arrows
 # representing the original variables. (0-2 points)
 ```
+
+#### First round of PCA
 
 ```{r pca-incorrectly}
 pca_summary_rows <- c(
@@ -105,11 +123,16 @@ caption = "Principal component analysis of non-standardized data"
 )
 ```
 
+
+As expected, PCA with non-standardized data doesn't make much sense as it'll happen that the variable will largest variance explains virtually all of the variance and therefore creating a biplot will fail miserably. 
+
 ```{r, echo = FALSE, fig.width=4, fig.height=1}
 ggord(pca_human, arrow = 0.4, txt = 5, vec_ext = 4, size = 0.06) + theme_minimal()
 ```
 
 
+
+#### Second round of PCA
 ```{r eval = FALSE, echo = FALSE}
 # Standardize the variables in the human data and repeat the above analysis.
 # Interpret the results of both analysis (with and without standardizing). Are
@@ -132,7 +155,7 @@ round(pca_summary_final,2),
 caption = "Principal component analysis of standardized data"
 )
 ```
-
+After scaling, PCA results will make sense. Because in the original data, variance and distribution vary wildly, using PCA in non-standardized data will yield strange results as PCA as a analysis technique is sensitive to to the relative scaling of variables.
 
 ```{r, echo = FALSE, fig.width=10, fig.height=9, cache = FALSE}
 ggord(
@@ -170,7 +193,7 @@ data(tea)
 
 
 
-Questions from From Exploratory Multivariate Analysis by Example Using R, Second Edition, 131-132
+The following questions which were used to gather the tea dataset can be found from the book [Exploratory Multivariate Analysis by Example Using R](https://books.google.fi/books/about/Exploratory_Multivariate_Analysis_by_Exa.html?id=nLrODgAAQBAJ&redir_esc=y), Second Edition, pages 131–132.
 
 1. What kind of tea do you drink the most (black tea, green tea, flavored tea)
 2. How do you take your tea (nothing added, with lemon, with milk, other)
@@ -198,7 +221,8 @@ Time of the day (yes/no):
 18. Do you drink tea after dinner?
 19. Do you drink tea throughout the day?
 
-Questions about the image of the product (yes/no): 
+Questions about the image of the product (yes/no):
+
 20 Do you consider tea to be exotic?
 21. Do you associate tea with spirituality?
 22. Is tea good for your health?
@@ -212,36 +236,33 @@ Questions about the image of the product (yes/no):
 31. Is tea a relaxant?
 32. Does tea have any effect on your overall health?
 
-Additionally, there were four background questions regarding: 
+Additionally, there were four background questions regarding:
+
 * sex
 * professional category (farmer, manual labourer, professional, senior management, employee, other profession, student, unemployed)
 * age
 * regular participation in sports (yes or no).
 
-```{r variable-overview, results='asis'}
+```{r variable-overview, results='asis', echo = FALSE}
 skim(tea) %>% skimr::kable()
 ```
 
-```{r explore-data-overview, cache = TRUE, echo = FALSE}
-# The purpose of your analysis is to study the relationships between 
-# high/low alcohol consumption and some of the other variables in the data. 
-# To do this, choose 4 interesting variables in the data and for each of them
-# present your personal hypothesis about their relationships with alcohol 
-# consumption. (0-1 point)
+```{r chapter5-explore-data-overview, cache = TRUE, echo = FALSE}
+
 taumatrix <- GKtauDataframe(tea %>% select(-age))
 ```
-Therefore, let's use [Goodman-Kruskal tau](https://cran.r-project.org/web/packages/GoodmanKruskal/vignettes/GoodmanKruskal.html) to explore associations between variables in the dataset. 
+Let's use [Goodman-Kruskal tau](https://cran.r-project.org/web/packages/GoodmanKruskal/vignettes/GoodmanKruskal.html) to explore associations between variables in the dataset. Goodman-Kruskal tau can be used to study association when the measurement level of the variable is at least categorical.
 
 
 
-```{r tau-matrix, fig.width=16, fig.height=12, echo = FALSE, cache = TRUE}
-plot(taumatrix,colorPlot = FALSE,diagSize = 0.2)
+```{r tau-matrix, fig.width=17, fig.height=14, echo = FALSE, cache = TRUE}
+plot(taumatrix,colorPlot = FALSE,diagSize = 0.15)
 ```
 
-Going trough the Goodman-Kruskal tau-matrix, we can observe few interesting associations between variables. Overall, associations are not very strong, but taking into account associations which are stronger than mean value for association (0.08).
+Going trough the Goodman-Kruskal tau-matrix, we can observe few interesting associations between variables. Overall, associations are not very strong, but the following associations emerge when taking into account associations which are stronger than the mean tau-value (0.08).
 
-* gender and considering tea feminine
-* age and considering tea feminine
+* gender and considering tea feminine or not feminine
+* age and considering tea feminine or not feminine
 * age and a belief that tea has an effect on overall health
 * a belief that tea has an effect on overall health and and considering tea healthy
 * type of the tea and age
@@ -252,7 +273,7 @@ Going trough the Goodman-Kruskal tau-matrix, we can observe few interesting asso
 
 Even though we'll eventually use all variables in the MCA, let's observe few of these associations bit more closely, just for the sake of curiosity.
 
-```{r pair-comparison, cache = FALSE, echo = FALSE, fig.width=13, fig.height=9}
+```{r pair-comparison, cache = FALSE, echo = FALSE, fig.width=13, fig.height=13}
 ggpairs(tea %>% 
   select(sex,age_Q,feminine,Tea,where,price))
 ```
@@ -263,7 +284,7 @@ ggpairs(tea %>%
 
 ### Drinkers of different types of tea 
 
-Let's use MCA to investigate, if there are statistically observable differences between groups of people who prefer different types of tea.
+Let's use MCA to investigate if there are observable differences between groups of people who prefer different types of tea.
 
 ```{r, eval = FALSE, echo = FALSE}
 # Then do Multiple Correspondence Analysis on the tea data (or to a certain
@@ -290,9 +311,9 @@ ggord(tea_mca,
       repel = TRUE) + theme_minimal()
 ```
 
-Looking the biplot graph, drinkers of different types of tea seem to somewhat differ. People who drink green and black tea are more often buying their tea from specialist shops, prefer unpackaged tea and dont't mind spending more money. Drinking Earl Gray seems to serve similiar purpose as habitual coffee drinking in Finland -- people drink it at work or with friends during lunch.
+Looking the biplot graph, drinkers of different types of tea seem to somewhat differ. People who drink green and black tea are more often buying their tea from specialist shops, prefer unpackaged tea and dont't mind spending more money. Drinking Earl Gray seems to serve similiar purpose as habitual coffee drinking in Finland – people drink it at work or with friends during lunch.
 
-It should be kept in mind that the proportion of green tea drinkers is very small compared to the friends of Earl Gray so that these conclusions based on biplot are not likely very strong.
+It should be kept in mind that the proportion of green tea drinkers is very small compared to the friends of Earl Gray so that these conclusions based on biplot are likely not very strong.
 
 
 
@@ -316,7 +337,7 @@ explor::MCA_ind_plot(res, xax = 1, yax = 2,ind_sup = FALSE,
 ```
 
 
-*Scree plot* cat be used to visualize the percentage of inertia explained by MCA dimensions.
+*Scree plot* cat be used to visualize the percentage of inertia (eg. in this context, variance) explained by MCA dimensions. From the plot we can see that the first dimension explains approximately 10% percent of variance and the second one 8%. 
 
 ```{r eigvenvalues, cache = TRUE, eval = TRUE, echo = FALSE}
 fviz_screeplot(tea_mca,geom = "bar")
