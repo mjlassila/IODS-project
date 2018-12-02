@@ -1,5 +1,5 @@
-# IODS Week 4
-# Matti Lassila 13.11.2018
+# IODS Week 4 & 5
+# Matti Lassila 2.12.2018
 
 # Read the “Human development” and “Gender inequality” datas into R. 
 
@@ -215,7 +215,6 @@ human %<>%  select(
   edu_exp,
   sec_edu_female,
   labour_rate_female,
-  edu_exp,
   life_exp,
   gni,
   mat_mortality,
