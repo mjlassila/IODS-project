@@ -1,0 +1,45 @@
+```{r chapter-5-setup, cache = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
+
+library(data.table)
+library(tidyverse)
+library(hrbrthemes)
+library(ggcorrplot)
+library(GoodmanKruskal)
+library(lindia)
+library(finalfit)
+library(sigr)
+library(papaja)
+library(here)
+library(kableExtra)
+library(GGally)
+library(gtools)
+library(MASS)
+library(corrplot)
+library(magrittr)
+library(caret)
+library(factoextra)
+library(broom)
+library(ggord)
+library(skimr)
+library(sjstats)
+library(explor)
+library(stargazer)
+# For overriding MASS select() 
+select <- dplyr::select
+set.seed(2018)
+```
+
+
+# Week 6 – Analysis of longitudinal data
+
+
+```{r chapter-8-generic-instruction, echo = FALSE}
+# Implement the analyses of Chapter 8 of MABS using the RATS data. (0-7 points)
+```
+
+
+
+```{r chapter9-generic-instruction, echo = FALSE}
+# Implement the analyses of Chapter 9 of MABS using the BPRS data. (0-8 points)
+```
+
