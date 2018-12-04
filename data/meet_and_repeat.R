@@ -69,8 +69,15 @@ raw_data_rats %<>% mutate(
 # 3. Convert the data sets to long form. Add a week variable to BPRS and a Time
 # variable to RATS. (1 point)
 
-bprs <- raw_data_bprs %>% gather(week,value,3:11)
-rats <- raw_data_rats %>% gather(wd, value, 3:11)
+bprs <- raw_data_bprs %>% 
+  gather(key = weeks, value = bprs, -treatment, -subject) %>%
+  mutate(week = as.integer(substr(weeks, 5, 5)))
+
+rats <- raw_data_rats %>% 
+  gather(key = weeks, value = rats, -group, -id) %>%
+  mutate(time = as.integer(substr(weeks, 3, 4)))
+  
+
 
 # 4. Now, take a serious look at the new data sets and compare them with their
 # wide form versions: check the variable names, view the data contents and
@@ -122,3 +129,16 @@ skim(rats)
 # ▇▂▁▁▃▂▃▁
 # ▇▁▁▁▂▂▃▁
 # ▇▁▁▁▂▂▃▁
+
+# Save the data
+
+write.csv(rats,"rats.csv",row.names = FALSE)
+write.csv(rats,"bprs.csv",row.names = FALSE)
+
+# Housekeeping
+
+rats_raw <- "rats.txt"
+bprs_raw <- "bprs.txt"
+
+if (file.exists(rats_raw)) file.remove(rats_raw)
+if (file.exists(bprs_raw)) file.remove(bprs_raw)
