@@ -91,22 +91,27 @@ ggplot(rats_standardized , aes(x = time, y = stdrats, linetype = id)) +
 
 ## Figure 8.3
 
-```{r Figure 8.3, echo=TRUE}
+```{r rats-83, echo=false}
 # Make a summary data:
 n <- length(0:8) # weeks, incl. baseline (0)
-BPRSS <- BPRSL %>%
-  group_by(treatment, week) %>%
-  summarise( mean=mean(bprs), se=sd(bprs)/sqrt(n) ) %>%
+rats_summary <- rats %>%
+  group_by(group, time) %>%
+  summarise(mean = mean(rats), se = sd(rats)/sqrt(n)) %>%
   ungroup()
-glimpse(BPRSS)
-p1 <- ggplot(BPRSS, aes(x = week, y = mean, linetype = treatment, shape = treatment))
-p2 <- p1 + geom_line() + scale_linetype_manual(values = c(1,2))
-p3 <- p2 + geom_point(size=3) + scale_shape_manual(values = c(1,2))
-p4 <- p3 + geom_errorbar(aes(ymin=mean-se, ymax=mean+se, linetype="1"), width=0.3)
-p5 <- p4 + theme_bw() + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-p6 <- p5 + theme(legend.position = c(0.8,0.8))
-p7 <- p6 + scale_y_continuous(name = "mean(bprs) +/- se(bprs)")
-p7
+
+skim(rats_summary)
+
+ggplot(rats_summary, aes(x = time, y = mean, linetype = group, shape = group)) +
+  geom_line() + scale_linetype_manual(values = c(1,2,3)) +
+  geom_point(size = 3) + scale_shape_manual(values = c(1,2,3)) +
+  geom_errorbar(aes(ymin=mean-se, ymax = mean+se, linetype = "1"), width=0.3) + 
+  theme_minimal() + 
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+    ) +
+  theme(legend.position = c(0.8,0.8)) +
+  scale_y_continuous(name = "mean(rats) +/- se(rats)")
 ```
 \pagebreak
 
