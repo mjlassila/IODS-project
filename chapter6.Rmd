@@ -38,9 +38,11 @@ set.seed(2018)
 ```
 
 
-```{r chapter6-load-data, echo = FALSE}
+```{r chapter6-load-data, echo = FALSE, message=FALSE}
 
-rats <- read.csv(here("data/rats.csv"))
+rats <- fread(here("data/rats.csv"))
+rats_raw <- fread(here("data/rats.txt"))
+rats_raw %<>% select(-V1)
 
 rats %<>% mutate(
   id = factor(id),
@@ -129,8 +131,79 @@ ggplot(rats, aes(x = factor(time), y = rats, fill = group)) +
 
 ```
 
+## Figure 8.5
 
 
+```{r rats-8-5, echo=TFALSE}
+# Make a summary data of the post treatment weeks (8<)
+rats_post <- rats %>%
+  filter(time > 1) %>%
+  group_by(group, id) %>%
+  summarise(mean=mean(rats)) %>%
+  ungroup()
+glimpse(rats_post)
+
+ggplot(rats_post, aes(x = group, y = mean)) +
+  geom_boxplot() +
+  theme_bw() + 
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  stat_summary(
+    fun.y = "mean",
+    geom = "point",
+    shape = 23,
+    size = 4,
+    fill = "white"
+    ) +
+  scale_y_continuous(name = "mean(rats), weeks 8<")
+
+```
+
+## Figure 8.6
+
+```{r rats-8-6, echo=FALSE}
+# Remove the outlier:
+rats_post %<>% filter(mean < 550)
+glimpse(rats_post)
+ggplot(rats_post, aes(x = group, y = mean)) +
+  geom_boxplot() +
+  theme_bw() + 
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+    ) +
+  stat_summary(
+    fun.y = "mean",
+    geom = "point",
+    shape = 23,
+    size = 4,
+    fill = "white"
+    ) +
+  scale_y_continuous(name = "mean(rats), weeks 8>")
+
+```
+
+## Table 8.3
+
+```{r Table 8.3, echo=TRUE}
+# Without the outlier, apply Student's t-test, two-sided:
+t.test(mean ~ group, data = rats_post, var.equal = TRUE)
+```
+
+## Table 8.4
+
+```{r Table 8.4, echo=TRUE}
+# Add the baseline from the original data as a new variable to the summary data:
+baseline <- rats_raw$WD1
+rats_post %<>%
+  mutate(baseline)
+# Fit the ANCOVA model and see the results:
+fit <- lm(mean ~ baseline + group, data = rats_post)
+summary(fit)
+anova(fit)
+```
 
 
 ```{r chapter9-generic-instruction, echo = FALSE}
