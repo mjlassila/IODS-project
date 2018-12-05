@@ -274,7 +274,7 @@ ggplot(bprs, aes(x = week, y = bprs, group = treatment)) +
 ## Figure 9.3
 
 ```{r, echo=TRUE, fig.width=10, fig.height=10}
-pairs(RATS[, 3:13], cex = 0.7)
+pairs(bprs_raw[, 3:11], cex = 0.7, col=factor(bprs_raw$treatment))
 ```
 \pagebreak
 
