@@ -249,22 +249,25 @@ ggplot(bprs, aes(x = week, y = bprs, group = subject)) +
 ## Table 9.3
 
 ```{r, echo=TRUE}
-RATS_reg <- lm(Weight ~ Time + Group, data = RATSL)
-summary(RATS_reg)
+bprs_lm <- lm(bprs ~ week + treatment, data = bprs)
+summary(bprs_lm)
 # dummies (in Table) vs summary output: D1 = Group2, D2 = Group3
 ```
-\pagebreak
 
 ## Figure 9.2
 
-```{r, echo=TRUE}
-p1 <- ggplot(RATSL, aes(x = Time, y = Weight, group = ID))
-p2 <- p1 + geom_line(aes(linetype = Group))
-p3 <- p2 + scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 10))
-p4 <- p3 + scale_y_continuous(name = "Weight (grams)")
-p5 <- p4 + theme_bw() + theme(legend.position = "top")
-p6 <- p5 + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-p6
+```{r, echo=TRUE, fig.height=10, fig.width=4}
+ggplot(bprs, aes(x = week, y = bprs, group = treatment)) +
+  geom_line(aes(linetype = treatment)) +
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 8, 1)) +
+  scale_y_continuous(name = "BRRS") +
+  theme_bw() + theme(legend.position = "top") +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  facet_grid(rows = vars(subject))
+
 ```
 \pagebreak
 
