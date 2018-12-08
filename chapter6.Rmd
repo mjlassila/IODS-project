@@ -3,8 +3,6 @@
 library(data.table)
 library(tidyverse)
 library(hrbrthemes)
-library(ggcorrplot)
-library(GoodmanKruskal)
 library(lindia)
 library(finalfit)
 library(sigr)
@@ -38,6 +36,8 @@ set.seed(2018)
 ```
 
 
+## Analyses of the MABS chapter 8 using the RATS data
+
 ```{r chapter6-load-data-rats, cache = TRUE, echo = FALSE, message=FALSE, warning = FALSE}
 
 rats <- fread(here("data/rats.csv"))
@@ -58,7 +58,7 @@ skim(rats)
 ```
 
 
-## Figure 8.1
+### Figure 8.1
 
 ```{r rats-81, echo = FALSE, cache = TRUE}
 ggplot(rats, aes(x = time, y = rats, linetype = id)) + 
@@ -68,12 +68,13 @@ ggplot(rats, aes(x = time, y = rats, linetype = id)) +
   theme(panel.grid.minor.y = element_blank()) +
   scale_y_continuous(
     limits = c(min(rats$rats), max(rats$rats)),
-    name = "weight (g)")
+    name = "weight (g)") +
+  scale_x_discrete(name = "time (days)")
 
 
 ```
 
-## Figure 8.2
+### Figure 8.2
 
 Previous figure but with standardized measurement values.
 
@@ -89,11 +90,12 @@ ggplot(rats , aes(x = time, y = stdrats, linetype = id)) +
   facet_grid(. ~ group, labeller = label_both) +
   theme_minimal() + theme(legend.position = "none") +
   theme(panel.grid.minor.y = element_blank()) +
-  scale_y_continuous(name = "standardized weight")
+  scale_y_continuous(name = "standardized weight") +
+  scale_x_discrete(name = "time (days)")
 
 ```
 
-## Figure 8.3
+### Figure 8.3
 
 Change over time, with summary values.
 
@@ -116,10 +118,11 @@ ggplot(rats_summary, aes(x = time, y = mean, linetype = group, shape = group)) +
     panel.grid.minor = element_blank()
     ) +
   theme(legend.position = c(0.8,0.8)) +
-  scale_y_continuous(name = "mean(rats) +/- se(rats)")
+  scale_y_continuous(name = "mean(rats) +/- se(rats)") +
+  scale_x_discrete(name = "time (days)")
 ```
 
-## Figure 8.4
+### Figure 8.4
 
 ```{r rats-8-4, echo = FALSE, cache = TRUE}
 ggplot(rats, aes(x = factor(time), y = rats, fill = group)) +
@@ -130,11 +133,11 @@ ggplot(rats, aes(x = factor(time), y = rats, fill = group)) +
     panel.grid.minor = element_blank()
   ) +
   theme(legend.position = c(0.8,0.8)) +
-  scale_x_discrete(name = "week")
+  scale_x_discrete(name = "time (days)")
 
 ```
 
-## Figure 8.5
+### Figure 8.5
 
 
 ```{r rats-8-5, echo=FALSE, cache = TRUE}
@@ -161,7 +164,8 @@ ggplot(rats_post, aes(x = group, y = mean)) +
     size = 3,
     fill = "red"
     ) +
-  scale_y_continuous(name = "mean(rats), weeks 8<")
+  scale_y_continuous(name = "mean(rats), weeks 8<") +
+  scale_x_discrete(name = "treatment group")
 
 ```
 
@@ -175,7 +179,7 @@ rats_post %<>%
 ```
 
 
-## Figure 8.6
+### Figure 8.6
 
 ```{r rats-8-6, echo=FALSE, fig.width = 3, fig.height=4, cache = TRUE}
 # Remove the outlier, case no 12 which has mean 594
@@ -197,20 +201,19 @@ ggplot(rats_post, aes(x = group, y = mean)) +
     size = 3,
     fill = "white"
     ) +
-  scale_y_continuous(name = "mean(rats), weeks 8>")
+  scale_y_continuous(name = "mean(rats), weeks 8>") +
+  scale_x_discrete(name = "time (days)")
 
 ```
 
-## Table 8.3
+### Table 8.3
 
 ```{r Table 8.3, echo=TRUE, cache = TRUE}
-# Without the outlier, apply Student's t-test, two-sided:
-
 fit = lm(formula = mean ~ factor(group), data=rats_post)
 anova(fit)
 ```
 
-## Table 8.4
+### Table 8.4
 
 ```{r Table 8.4, echo=TRUE, cache = TRUE}
 
@@ -220,6 +223,7 @@ summary(fit)
 anova(fit)
 ```
 
+## Analyses of the MABS chapter 9 using the BPRS data
 
 ```{r chapter9-generic-instruction, echo = FALSE}
 # Implement the analyses of Chapter 9 of MABS using the BPRS data. (0-8 points)
@@ -231,9 +235,10 @@ bprs <- fread(here("data/bprs.csv"))
 bprs_raw <- fread(here("data/bprs.txt"))
 
 bprs %<>% mutate(
-  subject = factor(subject),
-  treatment = factor(treatment),
-  weeks = factor(weeks)
+  subject = as.factor(subject),
+  treatment = as.factor(treatment),
+  weeks = as.factor(weeks),
+  week = as.factor(week)
 )
 
 
@@ -243,20 +248,20 @@ bprs %<>% mutate(
 skim(bprs)
 ```
 
-## Figure 9.1
+### Figure 9.1
 
 ```{r, echo = FALSE, fig.height=5, fig.width=5, cache = TRUE}
 ggplot(bprs, aes(x = week, y = bprs, group=week)) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
-  geom_jitter(height = 0, width = 0.1, size = 0.7) +
-  scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
-  scale_y_continuous(name = "BPRS-measurement") +
+  geom_jitter(height = 0, width = 0.1, size = 0.6) +
+  scale_x_discrete(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
+  scale_y_continuous(name = "BPRS-score") +
   stat_summary(
     fun.y = "mean",
     geom = "point",
     shape = 23,
-    size = 3,
-    fill = "white"
+    size = 2,
+    fill = "red"
     ) +
   theme_bw() +
   theme(
@@ -274,33 +279,33 @@ bprs %<>%
   mutate(stdbprs = (bprs - mean(bprs))/sd(bprs)) %>%
   ungroup()
 
-ggplot(bprs , aes(x = week, y = stdbprs, linetype = subject)) + 
-  geom_line() + scale_linetype_manual(values = rep(1:10, times = 4)) +
-  facet_grid(. ~ treatment, labeller = label_both) +
+ggplot(bprs , aes(x = week, y = stdbprs, group = subject)) + 
+  geom_line(aes(linetype = subject)) + 
   theme_minimal() + theme(legend.position = "none") +
   theme(panel.grid.minor.y = element_blank()) +
-  scale_y_continuous(name = "standardized bprs")
+  scale_y_continuous(name = "standardized bprs") +
+  scale_x_discrete(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
+  facet_grid(. ~ treatment, labeller = label_both)
 
 ```
 
 
 
-## Table 9.3
+### Table 9.3
 
 ```{r, echo=TRUE}
 bprs_lm <- lm(bprs ~ week + treatment, data = bprs)
 summary(bprs_lm)
-# dummies (in Table) vs summary output: D1 = Group2, D2 = Group3
 ```
 
-## Figure 9.2
+### Figure 9.2
 
-```{r, echo=TRUE, cache = TRUE}
-ggplot(bprs, aes(x = week, y = bprs, linetype = subject)) +
+```{r, echo=FALSE, cache = TRUE}
+ggplot(bprs, aes(x = week, y = bprs, group = subject)) +
   geom_line(aes(linetype = subject)) +
-  scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
-  scale_y_continuous(name = "BPRS-measurement") +
-  theme_bw() + theme(legend.position = "top") +
+  scale_x_discrete(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
+  scale_y_continuous(name = "BPRS-score") +
+  theme_bw() + theme(legend.position = "none") +
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank()
@@ -310,74 +315,71 @@ ggplot(bprs, aes(x = week, y = bprs, linetype = subject)) +
 ```
 
 
-## Figure 9.3
+### Figure 9.3
 
-```{r, echo=TRUE, fig.width=10, fig.height=10, cache = TRUE}
+```{r, echo=FALSE, fig.width=10, fig.height=10, cache = TRUE}
 pairs(bprs_raw[, 3:11], cex = 0.9, col=factor(bprs_raw$treatment))
 ```
 
 
-## Table 9.4
+### Table 9.4
 
 ```{r, echo=TRUE, message=FALSE, cache=TRUE, warning=FALSE}
 library("lme4")
 bprs_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = bprs, REML = FALSE)
 summary(bprs_ref)
-# dummies (in Table) vs summary output: D1 = Group2, D2 = Group3
 ```
 
 
-## Table 9.5
+### Table 9.5
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, warning = FALSE, message=FALSE}
 library(lme4)
 bprs_ref1 <- lmer(bprs ~ week + treatment + (week | subject), data = bprs, REML = FALSE)
 summary(bprs_ref1)
-# dummies (in Table) vs summary output: D1 = Group2, D2 = Group3
 anova(bprs_ref1, bprs_ref)
 ```
 
-## Table 9.6
+### Table 9.6
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, warning = FALSE}
 bprs_ref2 <- lmer(bprs ~ week * treatment + (week | subject), data = bprs, REML = FALSE)
 summary(bprs_ref2)
-# dummies (in Table) vs summary output: D1 = Group2, D2 = Group3
 anova(bprs_ref1, bprs_ref2)
 ```
 
 ## Figure 9.4
 
-```{r, echo=TRUE, fig.width=6, fig.height=4, eval = TRUE, cache = TRUE}
+```{r, echo=FALSE, fig.width=6, fig.height=4, eval = TRUE, cache = TRUE }
 bprs_fitted <- fitted(bprs_ref2)
 bprs %<>% mutate(bprs_fitted)
 
 graph1 <- 
   ggplot(bprs, aes(x = week, y = bprs, group = subject)) +
   geom_line(aes(linetype = subject)) +
-  scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 60, 20)) +
-  scale_y_continuous(name = "BPRS-measurement") +
-  theme_minimal() + theme(legend.position = "none") +
+  scale_x_discrete(name = "Time (weeks)",breaks = seq(0, 8, 1)) +
+  scale_y_continuous(name = "BPRS-score") +
+  theme_bw() + theme(legend.position = "none") +
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank()
     ) +
-  ggtitle("Observed") +
+  ggtitle("Observed BPRS-scores") +
   facet_grid(. ~ treatment, labeller = label_both)
 
 
 
 ```
 
-```{r, eval=TRUE, cache = TRUE, fig.width=6, fig.height=4}
+```{r, echo=FALSE, eval=TRUE, cache = TRUE, fig.width=6, fig.height=4}
 graph2 <- 
   ggplot(bprs, aes(x = week, y = bprs_fitted, group = subject)) +
   geom_line(aes(linetype = subject)) +
-  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 20)) +
-  scale_y_continuous(name = "Weight (grams)") +
+  scale_x_discrete(name = "Time (weeks)",breaks = seq(0, 8, 1)) +
+  scale_y_continuous(name = "BPRS-score") +
   theme_bw() + theme(legend.position = "none") +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  ggtitle("Fitted") +
+  ggtitle("Fitted BPRS scores") +
   facet_grid(. ~ treatment, labeller = label_both)
 
 ```
@@ -385,4 +387,5 @@ graph2 <-
 ```{r print-graphics, echo = FALSE}
 graph1;graph2
 ```
+
 
