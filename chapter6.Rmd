@@ -245,16 +245,17 @@ skim(bprs)
 
 ## Figure 9.1
 
-```{r, echo = FALSE, fig.height=5, fig.width=3, cache = TRUE}
-ggplot(bprs, aes(x = week, y = bprs, group = subject)) +
-  geom_text(aes(label = treatment)) +
+```{r, echo = FALSE, fig.height=5, fig.width=5, cache = TRUE}
+ggplot(bprs, aes(x = week, y = bprs)) +
+  geom_jitter(width = 0.25, height = 0.1, size = 0.2) + 
   scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
   scale_y_continuous(name = "BPRS") +
   theme_bw() +
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank()
-    )
+    ) + 
+  facet_grid(. ~ treatment, labeller = label_both)
 ```
 
 
@@ -303,6 +304,7 @@ summary(bprs_ref)
 ## Table 9.5
 
 ```{r, echo=TRUE}
+library(lme4)
 bprs_ref1 <- lmer(bprs ~ week + treatment + (week | subject), data = bprs, REML = FALSE)
 summary(bprs_ref1)
 # dummies (in Table) vs summary output: D1 = Group2, D2 = Group3
@@ -320,36 +322,41 @@ anova(bprs_ref1, bprs_ref2)
 
 ## Figure 9.4
 
-```{r, echo=TRUE, fig.width=3, fig.height=4, eval = FALSE}
+```{r, echo=TRUE, fig.width=6, fig.height=4, eval = TRUE, cache = TRUE}
 bprs_fitted <- fitted(bprs_ref2)
 bprs %<>% mutate(bprs_fitted)
 
 graph1 <- 
   ggplot(bprs, aes(x = week, y = bprs, group = subject)) +
-  geom_line(aes(linetype = treatment)) +
+  geom_line(aes(linetype = subject)) +
   scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 20)) +
-  scale_y_continuous(name = "Weight (grams)") +
-  theme_bw() + theme(legend.position = "right") +
+  scale_y_continuous(name = "measurement") +
+  theme_minimal() + theme(legend.position = "none") +
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank()
     ) +
-  ggtitle("Observed")
+  ggtitle("Observed") +
+  facet_grid(. ~ treatment, labeller = label_both)
 
 
-graph1
+
 ```
 
-```{r, eval=FALSE}
+```{r, eval=TRUE, cache = TRUE, fig.width=6, fig.height=4}
 graph2 <- 
-  ggplot(bprs, aes(x = week, y = Fitted, group = subject))
-p2 <- p1 + geom_line(aes(linetype = Group))
-p3 <- p2 + scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 20))
-p4 <- p3 + scale_y_continuous(name = "Weight (grams)")
-p5 <- p4 + theme_bw() + theme(legend.position = "right")
-p6 <- p5 + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-p7 <- p6 + ggtitle("Fitted")
-graph2 <- p7
+  ggplot(bprs, aes(x = week, y = bprs_fitted, group = subject)) +
+  geom_line(aes(linetype = subject)) +
+  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 20)) +
+  scale_y_continuous(name = "Weight (grams)") +
+  theme_bw() + theme(legend.position = "none") +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  ggtitle("Fitted") +
+  facet_grid(. ~ treatment, labeller = label_both)
+
 ```
 
+```{r print-graphics, echo = FALSE}
+graph1;graph2
+```
 
