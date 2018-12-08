@@ -1,4 +1,4 @@
-```{r chapter-5-setup, cache = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
+```{r chapter-6-setup, cache = FALSE, echo = FALSE, message = FALSE, warning = FALSE}
 
 library(data.table)
 library(tidyverse)
@@ -30,6 +30,7 @@ set.seed(2018)
 
 # Week 6 – Analysis of longitudinal data
 
+The goal of the sixth and the last week of IODS is to explore modeling approaches suitable for longitudinal data.
 
 ```{r chapter-8-generic-instruction, echo = FALSE}
 # Implement the analyses of Chapter 8 of MABS using the RATS data. (0-7 points)
@@ -37,6 +38,8 @@ set.seed(2018)
 
 
 ## Analyses of the MABS chapter 8 using the RATS data
+
+The data we'll use is from a nutrition study conducted in three groups of rats. Three groups of rats were given different types of food and over 9-week period their body weight was measured repeatedly. In the following we'll explore, whether there is any difference on the weight gain between different treatment groups.
 
 ```{r chapter6-load-data-rats, cache = TRUE, echo = FALSE, message=FALSE, warning = FALSE}
 
@@ -140,7 +143,7 @@ ggplot(rats, aes(x = factor(time), y = rats, fill = group)) +
 ### Figure 8.5
 
 
-```{r rats-8-5, echo=FALSE, cache = TRUE}
+```{r rats-8-5, echo=FALSE, cache = FALSE}
 # Make a summary data of the post treatment weeks (8<)
 rats_post <- rats %>%
   filter(time > 1) %>%
@@ -161,7 +164,7 @@ ggplot(rats_post, aes(x = group, y = mean)) +
     fun.y = "mean",
     geom = "point",
     shape = 23,
-    size = 3,
+    size = 2,
     fill = "red"
     ) +
   scale_y_continuous(name = "mean(rats), weeks 8<") +
@@ -181,10 +184,17 @@ rats_post %<>%
 
 ### Figure 8.6
 
-```{r rats-8-6, echo=FALSE, fig.width = 3, fig.height=4, cache = TRUE}
-# Remove the outlier, case no 12 which has mean 594
+Let's see what happens when we filter out the outliers, as there are three rats which don't fit their respective groups very well.
 
-rats_post %<>% filter(mean < 550)
+```{r rats-8-6, echo=FALSE, cache = FALSE, fig.height=5, fig.width=4}
+# Remove the outliers, 
+# heaviest rat: case no 12 which has mean 594
+# thinnes rat: case no 2, which has mean 238.9
+
+# third group has an outlying case no 13
+# withing group the value differs from others
+
+rats_post %<>% filter(mean < 550, mean > 240, id != 13) 
 glimpse(rats_post)
 ggplot(rats_post, aes(x = group, y = mean)) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
@@ -198,11 +208,11 @@ ggplot(rats_post, aes(x = group, y = mean)) +
     fun.y = "mean",
     geom = "point",
     shape = 23,
-    size = 3,
-    fill = "white"
+    size = 2,
+    fill = "red"
     ) +
   scale_y_continuous(name = "mean(rats), weeks 8>") +
-  scale_x_discrete(name = "time (days)")
+  scale_x_discrete(name = "treatment group")
 
 ```
 
@@ -212,6 +222,8 @@ ggplot(rats_post, aes(x = group, y = mean)) +
 fit = lm(formula = mean ~ factor(group), data=rats_post)
 anova(fit)
 ```
+
+Result of ANOVA doesn't surprise, as just by glancing the graphics one can see that the three treatment groups of rats differ each other significantly.
 
 ### Table 8.4
 
@@ -223,7 +235,14 @@ summary(fit)
 anova(fit)
 ```
 
+Also the starting weight of the rat seem to have a slight effect on resulting weight gain, but the effect is negligible.
+
 ## Analyses of the MABS chapter 9 using the BPRS data
+
+Next we'll explore clinical trial data from an antipsychotic treatment study (this is my guess as the origin of the data is not stated at Davis, C. S (2002). *Statistical Methods for the Analysis of Repeated Measurements*, p. 30 where the dataset is introduced)
+
+40 male patients were randomly assigned to one of two treatment groups and each subject was rated on the brief psychiatric rating scale (BPRS) measured before when the treatment began (week 0) and once a week fora period of eight weeks. The BPRS assesses the level of 18 psychosis symptoms such as hostility, suspiciousness or hallucinations and each of these symptons are rated at the scale from one (not present) to seven (extremely severe). The scale is used to evaluate patients suspected of having schizophrenia.
+
 
 ```{r chapter9-generic-instruction, echo = FALSE}
 # Implement the analyses of Chapter 9 of MABS using the BPRS data. (0-8 points)
@@ -238,7 +257,7 @@ bprs %<>% mutate(
   subject = as.factor(subject),
   treatment = as.factor(treatment),
   weeks = as.factor(weeks),
-  week = as.factor(week)
+  week = as.numeric(week)
 )
 
 
@@ -254,7 +273,7 @@ skim(bprs)
 ggplot(bprs, aes(x = week, y = bprs, group=week)) +
   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
   geom_jitter(height = 0, width = 0.1, size = 0.6) +
-  scale_x_discrete(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
+  scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
   scale_y_continuous(name = "BPRS-score") +
   stat_summary(
     fun.y = "mean",
@@ -271,6 +290,9 @@ ggplot(bprs, aes(x = week, y = bprs, group=week)) +
   facet_grid(. ~ treatment, labeller = label_both)
 ```
 
+We can see from the violin plot that there is a downward trend in both treatment groups in the mean BPRS scores (red diamons). Also, neither of the groups doesn't seem to very different to each other. There are few outlying cases in both groups, but more in the second treatment group.
+
+From the next plot we can see individual cases plotted on the standardized scale.
 
 ```{r bprs-standardized, echo=FALSE, cache = TRUE}
 # Standardise the scores:
@@ -284,7 +306,7 @@ ggplot(bprs , aes(x = week, y = stdbprs, group = subject)) +
   theme_minimal() + theme(legend.position = "none") +
   theme(panel.grid.minor.y = element_blank()) +
   scale_y_continuous(name = "standardized bprs") +
-  scale_x_discrete(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
+  scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
   facet_grid(. ~ treatment, labeller = label_both)
 
 ```
@@ -297,13 +319,14 @@ ggplot(bprs , aes(x = week, y = stdbprs, group = subject)) +
 bprs_lm <- lm(bprs ~ week + treatment, data = bprs)
 summary(bprs_lm)
 ```
+Simple linear model doesn't fit the data very well. Treatment group doesn't have an statistically significant effect, only the time has -- as one might expect considering the context of the data. Next we'll try to investigate a more nuanced model, particulary a model with random effects which might capture the individual variation better.
 
 ### Figure 9.2
 
 ```{r, echo=FALSE, cache = TRUE}
 ggplot(bprs, aes(x = week, y = bprs, group = subject)) +
   geom_line(aes(linetype = subject)) +
-  scale_x_discrete(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
+  scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
   scale_y_continuous(name = "BPRS-score") +
   theme_bw() + theme(legend.position = "none") +
   theme(
@@ -324,9 +347,12 @@ pairs(bprs_raw[, 3:11], cex = 0.9, col=factor(bprs_raw$treatment))
 
 ### Table 9.4
 
-```{r, echo=TRUE, message=FALSE, cache=TRUE, warning=FALSE}
+```{r, echo=TRUE, message=FALSE, cache=FALSE, warning=FALSE}
 library("lme4")
-bprs_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = bprs, REML = FALSE)
+bprs_ref <- lmer(
+  bprs ~ week + treatment + (1 | subject),
+  data = bprs,
+  REML = FALSE)
 summary(bprs_ref)
 ```
 
@@ -335,20 +361,31 @@ summary(bprs_ref)
 
 ```{r, echo=TRUE, warning = FALSE, message=FALSE}
 library(lme4)
-bprs_ref1 <- lmer(bprs ~ week + treatment + (week | subject), data = bprs, REML = FALSE)
+bprs_ref1 <- lmer(
+  bprs ~ week + treatment + (week | subject),
+  data = bprs,
+  REML = FALSE)
 summary(bprs_ref1)
 anova(bprs_ref1, bprs_ref)
 ```
 
+
 ### Table 9.6
 
 ```{r, echo=TRUE, warning = FALSE}
-bprs_ref2 <- lmer(bprs ~ week * treatment + (week | subject), data = bprs, REML = FALSE)
+bprs_ref2 <- lmer(
+  bprs ~ week * treatment + (week | subject), 
+  data = bprs, 
+  REML = FALSE)
 summary(bprs_ref2)
 anova(bprs_ref1, bprs_ref2)
 ```
 
+Looking the results of ANOVA, interaction between time and treatment group is significant at 95% level.
+
 ## Figure 9.4
+
+Finally, let's inspect visually how well the linear mixed model with interaction between time and treantment variables fit the data.
 
 ```{r, echo=FALSE, fig.width=6, fig.height=4, eval = TRUE, cache = TRUE }
 bprs_fitted <- fitted(bprs_ref2)
@@ -388,4 +425,5 @@ graph2 <-
 graph1;graph2
 ```
 
+Inspecting the fit visually, the result seems surprisingly good. This might be just a coincidence and one should dig deeper on the metods (and their limitations) used before declaring the model valid.
 
