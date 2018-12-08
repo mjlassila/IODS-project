@@ -133,12 +133,4 @@ skim(rats)
 # Save the data
 
 write.csv(rats,"rats.csv",row.names = FALSE)
-write.csv(rats,"bprs.csv",row.names = FALSE)
-
-# Housekeeping
-
-rats_raw <- "rats.txt"
-bprs_raw <- "bprs.txt"
-
-if (file.exists(rats_raw)) file.remove(rats_raw)
-if (file.exists(bprs_raw)) file.remove(bprs_raw)
+write.csv(bprs,"bprs.csv",row.names = FALSE)
