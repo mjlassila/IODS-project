@@ -246,10 +246,18 @@ skim(bprs)
 ## Figure 9.1
 
 ```{r, echo = FALSE, fig.height=5, fig.width=5, cache = TRUE}
-ggplot(bprs, aes(x = week, y = bprs)) +
-  geom_jitter(width = 0.25, height = 0.1, size = 0.2) + 
+ggplot(bprs, aes(x = week, y = bprs, group=week)) +
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
+  geom_jitter(height = 0, width = 0.1, size = 0.7) +
   scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
-  scale_y_continuous(name = "BPRS") +
+  scale_y_continuous(name = "BPRS-measurement") +
+  stat_summary(
+    fun.y = "mean",
+    geom = "point",
+    shape = 23,
+    size = 3,
+    fill = "white"
+    ) +
   theme_bw() +
   theme(
     panel.grid.major = element_blank(),
@@ -257,6 +265,24 @@ ggplot(bprs, aes(x = week, y = bprs)) +
     ) + 
   facet_grid(. ~ treatment, labeller = label_both)
 ```
+
+
+```{r bprs-standardized, echo=FALSE, cache = TRUE}
+# Standardise the scores:
+bprs %<>%
+  group_by(week) %>%
+  mutate(stdbprs = (bprs - mean(bprs))/sd(bprs)) %>%
+  ungroup()
+
+ggplot(bprs , aes(x = week, y = stdbprs, linetype = subject)) + 
+  geom_line() + scale_linetype_manual(values = rep(1:10, times = 4)) +
+  facet_grid(. ~ treatment, labeller = label_both) +
+  theme_minimal() + theme(legend.position = "none") +
+  theme(panel.grid.minor.y = element_blank()) +
+  scale_y_continuous(name = "standardized bprs")
+
+```
+
 
 
 ## Table 9.3
@@ -272,8 +298,8 @@ summary(bprs_lm)
 ```{r, echo=TRUE, cache = TRUE}
 ggplot(bprs, aes(x = week, y = bprs, linetype = subject)) +
   geom_line(aes(linetype = subject)) +
-  scale_x_continuous(name = "Time (days)", breaks = seq(0, 8, 1)) +
-  scale_y_continuous(name = "BRRS") +
+  scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
+  scale_y_continuous(name = "BPRS-measurement") +
   theme_bw() + theme(legend.position = "top") +
   theme(
     panel.grid.major = element_blank(),
@@ -329,8 +355,8 @@ bprs %<>% mutate(bprs_fitted)
 graph1 <- 
   ggplot(bprs, aes(x = week, y = bprs, group = subject)) +
   geom_line(aes(linetype = subject)) +
-  scale_x_continuous(name = "Time (days)", breaks = seq(0, 60, 20)) +
-  scale_y_continuous(name = "measurement") +
+  scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 60, 20)) +
+  scale_y_continuous(name = "BPRS-measurement") +
   theme_minimal() + theme(legend.position = "none") +
   theme(
     panel.grid.major = element_blank(),
