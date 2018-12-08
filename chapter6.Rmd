@@ -38,11 +38,11 @@ set.seed(2018)
 ```
 
 
-```{r chapter6-load-data-rats, echo = FALSE, message=FALSE}
+```{r chapter6-load-data-rats, cache = TRUE, echo = FALSE, message=FALSE, warning = FALSE}
 
 rats <- fread(here("data/rats.csv"))
 rats_raw <- fread(here("data/rats.txt"))
-rats_raw %<>% select(-V1)
+rats_raw <- rats_raw[,2:dim(rats_raw)[2]]
 
 rats %<>% mutate(
   id = factor(id),
@@ -53,14 +53,14 @@ rats %<>% mutate(
 
 ```
 
-```{r rats-overview, echo = FALSE}
+```{r rats-overview, echo = FALSE, cache = TRUE}
 skim(rats)
 ```
 
 
 ## Figure 8.1
 
-```{r rats-81, echo = FALSE}
+```{r rats-81, echo = FALSE, cache = TRUE}
 ggplot(rats, aes(x = time, y = rats, linetype = id)) + 
   geom_line() + scale_linetype_manual(values = rep(1:10, times=4)) + 
   facet_grid(. ~ group, labeller = label_both) +
@@ -72,18 +72,18 @@ ggplot(rats, aes(x = time, y = rats, linetype = id)) +
 
 
 ```
-\pagebreak
 
 ## Figure 8.2
 
-```{r rats-82, echo=FALSE}
+Previous figure but with standardized measurement values.
+
+```{r rats-82, echo=FALSE, cache = TRUE}
 # Standardise the scores:
 rats %<>%
   group_by(time) %>%
   mutate(stdrats = (rats - mean(rats))/sd(rats)) %>%
   ungroup()
 
-skim(rats)
 ggplot(rats , aes(x = time, y = stdrats, linetype = id)) + 
   geom_line() + scale_linetype_manual(values = rep(1:10, times = 4)) +
   facet_grid(. ~ group, labeller = label_both) +
@@ -92,11 +92,12 @@ ggplot(rats , aes(x = time, y = stdrats, linetype = id)) +
   scale_y_continuous(name = "standardized weight")
 
 ```
-\pagebreak
 
 ## Figure 8.3
 
-```{r rats-83, echo=FALSE}
+Change over time, with summary values.
+
+```{r rats-83, echo=FALSE, cache = TRUE}
 # Make a summary data:
 n <- length(0:8) # weeks, incl. baseline (0)
 rats_summary <- rats %>%
@@ -104,7 +105,6 @@ rats_summary <- rats %>%
   summarise(mean = mean(rats), se = sd(rats)/sqrt(n)) %>%
   ungroup()
 
-skim(rats_summary)
 
 ggplot(rats_summary, aes(x = time, y = mean, linetype = group, shape = group)) +
   geom_line() + scale_linetype_manual(values = c(1,2,3)) +
@@ -121,7 +121,7 @@ ggplot(rats_summary, aes(x = time, y = mean, linetype = group, shape = group)) +
 
 ## Figure 8.4
 
-```{r rats-8-4, echo = FALSE}
+```{r rats-8-4, echo = FALSE, cache = TRUE}
 ggplot(rats, aes(x = factor(time), y = rats, fill = group)) +
   geom_boxplot(position = position_dodge(width = 0.9)) +
   theme_minimal() + 
@@ -137,7 +137,7 @@ ggplot(rats, aes(x = factor(time), y = rats, fill = group)) +
 ## Figure 8.5
 
 
-```{r rats-8-5, echo=FALSE}
+```{r rats-8-5, echo=FALSE, cache = TRUE}
 # Make a summary data of the post treatment weeks (8<)
 rats_post <- rats %>%
   filter(time > 1) %>%
@@ -165,10 +165,21 @@ ggplot(rats_post, aes(x = group, y = mean)) +
 
 ```
 
+```{r add-baseline, echo = FALSE, cache = TRUE}
+# It is best to add baseline now, before filtering
+# Add the baseline from the original data as a new variable to the summary data:
+baseline <- rats_raw$WD1
+rats_post %<>%
+  mutate(baseline)
+
+```
+
+
 ## Figure 8.6
 
-```{r rats-8-6, echo=FALSE, fig.width = 3, fig.height=4}
-# Remove the outlier:
+```{r rats-8-6, echo=FALSE, fig.width = 3, fig.height=4, cache = TRUE}
+# Remove the outlier, case no 12 which has mean 594
+
 rats_post %<>% filter(mean < 550)
 glimpse(rats_post)
 ggplot(rats_post, aes(x = group, y = mean)) +
@@ -192,22 +203,19 @@ ggplot(rats_post, aes(x = group, y = mean)) +
 
 ## Table 8.3
 
-```{r Table 8.3, echo=TRUE}
+```{r Table 8.3, echo=TRUE, cache = TRUE}
 # Without the outlier, apply Student's t-test, two-sided:
 
-fit = lm(formula = mean ~ group, data=rats_post)
+fit = lm(formula = mean ~ factor(group), data=rats_post)
 anova(fit)
 ```
 
 ## Table 8.4
 
-```{r Table 8.4, echo=TRUE}
-# Add the baseline from the original data as a new variable to the summary data:
-baseline <- rats_raw$WD1
-rats_post %<>%
-  mutate(baseline)
+```{r Table 8.4, echo=TRUE, cache = TRUE}
+
 # Fit the ANCOVA model and see the results:
-fit <- lm(mean ~ baseline + group, data = rats_post)
+fit <- lm(mean ~ baseline + factor(group), data = rats_post)
 summary(fit)
 anova(fit)
 ```
@@ -217,11 +225,10 @@ anova(fit)
 # Implement the analyses of Chapter 9 of MABS using the BPRS data. (0-8 points)
 ```
 
-```{r chapter6-load-data-bprs, echo = FALSE, message=FALSE}
+```{r chapter6-load-data-bprs, echo = FALSE, message=FALSE, warning=FALSE}
 
 bprs <- fread(here("data/bprs.csv"))
 bprs_raw <- fread(here("data/bprs.txt"))
-rats_raw %<>% select(-V1)
 
 bprs %<>% mutate(
   subject = factor(subject),
@@ -238,7 +245,7 @@ skim(bprs)
 
 ## Figure 9.1
 
-```{r, echo = FALSE, fig.height=5, fig.width=3}
+```{r, echo = FALSE, fig.height=5, fig.width=3, cache = TRUE}
 ggplot(bprs, aes(x = week, y = bprs, group = subject)) +
   geom_text(aes(label = treatment)) +
   scale_x_continuous(name = "Time (weeks)", breaks = seq(0, 8, 1)) +
@@ -261,7 +268,7 @@ summary(bprs_lm)
 
 ## Figure 9.2
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, cache = TRUE}
 ggplot(bprs, aes(x = week, y = bprs, linetype = subject)) +
   geom_line(aes(linetype = subject)) +
   scale_x_continuous(name = "Time (days)", breaks = seq(0, 8, 1)) +
@@ -274,18 +281,18 @@ ggplot(bprs, aes(x = week, y = bprs, linetype = subject)) +
   facet_grid(. ~ treatment, labeller = label_both)
 
 ```
-\pagebreak
+
 
 ## Figure 9.3
 
-```{r, echo=TRUE, fig.width=10, fig.height=10}
+```{r, echo=TRUE, fig.width=10, fig.height=10, cache = TRUE}
 pairs(bprs_raw[, 3:11], cex = 0.9, col=factor(bprs_raw$treatment))
 ```
-\pagebreak
+
 
 ## Table 9.4
 
-```{r, echo=TRUE}
+```{r, echo=TRUE, message=FALSE, cache=TRUE, warning=FALSE}
 library("lme4")
 bprs_ref <- lmer(bprs ~ week + treatment + (1 | subject), data = bprs, REML = FALSE)
 summary(bprs_ref)
@@ -301,7 +308,6 @@ summary(bprs_ref1)
 # dummies (in Table) vs summary output: D1 = Group2, D2 = Group3
 anova(bprs_ref1, bprs_ref)
 ```
-\pagebreak
 
 ## Table 9.6
 
@@ -314,7 +320,7 @@ anova(bprs_ref1, bprs_ref2)
 
 ## Figure 9.4
 
-```{r, echo=TRUE, fig.width=3, fig.height=4}
+```{r, echo=TRUE, fig.width=3, fig.height=4, eval = FALSE}
 bprs_fitted <- fitted(bprs_ref2)
 bprs %<>% mutate(bprs_fitted)
 
@@ -330,6 +336,11 @@ graph1 <-
     ) +
   ggtitle("Observed")
 
+
+graph1
+```
+
+```{r, eval=FALSE}
 graph2 <- 
   ggplot(bprs, aes(x = week, y = Fitted, group = subject))
 p2 <- p1 + geom_line(aes(linetype = Group))
@@ -339,6 +350,6 @@ p5 <- p4 + theme_bw() + theme(legend.position = "right")
 p6 <- p5 + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 p7 <- p6 + ggtitle("Fitted")
 graph2 <- p7
-graph1; graph2
 ```
+
 
